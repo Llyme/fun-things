@@ -5,6 +5,7 @@ RX_PROXY_URI = r"^(https?\:\/\/)(?:([^:@]+):([^@]+)@)?([^:@]+):([^:@]+)$"
 
 
 class ProxyURI(NamedTuple):
+    uri: str
     protocol: str
     username: str
     password: str
@@ -30,6 +31,7 @@ class ProxyURI(NamedTuple):
         server = f"{protocol}{host}:{port}"
 
         return ProxyURI(
+            uri=uri,
             protocol=protocol,
             username=username,
             password=password,
