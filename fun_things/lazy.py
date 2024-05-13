@@ -4,6 +4,10 @@ T = TypeVar("T")
 
 
 class lazy(Generic[T]):
+    """
+    A lazy initialization attribute.
+    """
+
     def __init__(
         self,
         fn: Callable[..., T],
@@ -12,9 +16,9 @@ class lazy(Generic[T]):
         self.__instance: T = None  # type: ignore
         self.__exists: bool = False
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, cls) -> T:
         if instance is None:
-            return self
+            return self  # type: ignore
 
         value = self.__fn(instance)
 
@@ -30,7 +34,7 @@ class lazy(Generic[T]):
         self,
         *args,
         **kwargs,
-    ):
+    ) -> T:
         if not self.__exists:
             self.__exists = True
             self.__instance = self.__fn(
@@ -42,6 +46,9 @@ class lazy(Generic[T]):
 
     @property
     def self(self):
+        if not self.__exists:
+            raise Exception("The instance is not initialized!")
+
         return self.__instance
 
     @property
@@ -49,5 +56,8 @@ class lazy(Generic[T]):
         return self.__exists
 
     def clear(self):
+        """
+        Clears the initialized value.
+        """
         self.__exists = False
         self.__instance = None  # type: ignore
