@@ -23,7 +23,6 @@ def weighted_distribution(
         for item in items
     ]
     weighted_items.sort(key=lambda item: item["weight"])
-    print(weighted_items)
 
     max_weight = reduce(
         lambda value, item: value + item["weight"],
