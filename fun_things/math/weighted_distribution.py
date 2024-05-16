@@ -7,7 +7,7 @@ T = TypeVar("T")
 
 def weighted_distribution(
     items: Iterable[T],
-    weight_selector: Callable[[T], float],
+    weight_selector: Callable[[T], float] = lambda v: v,  # type: ignore
 ) -> Generator[T, Any, None]:
     """
     Choose a random item based on their given weight.
@@ -23,6 +23,7 @@ def weighted_distribution(
         for item in items
     ]
     weighted_items.sort(key=lambda item: item["weight"])
+    print(weighted_items)
 
     max_weight = reduce(
         lambda value, item: value + item["weight"],
@@ -34,6 +35,9 @@ def weighted_distribution(
         value = random() * max_weight
 
         for item in weighted_items:
-            if value < item["weight"]:
+            weight = item["weight"]
+            if value < weight:
                 yield item["item"]
                 break
+
+            value -= weight
