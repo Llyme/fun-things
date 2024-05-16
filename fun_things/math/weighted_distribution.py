@@ -14,14 +14,24 @@ def weighted_distribution(
 
     A higher weight means they have
     a higher chance of being chosen.
+
+    0 or negative weights are ignored.
     """
-    weighted_items = [
-        {
-            "item": item,
-            "weight": weight_selector(item),
-        }
-        for item in items
-    ]
+    weighted_items = []
+
+    for item in items:
+        weight = weight_selector(item)
+
+        if weight <= 0:
+            continue
+
+        weighted_items.append(
+            {
+                "item": item,
+                "weight": weight,
+            }
+        )
+
     weighted_items.sort(key=lambda item: item["weight"])
 
     max_weight = reduce(
