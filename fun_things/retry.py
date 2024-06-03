@@ -23,6 +23,9 @@ class Retry(NamedTuple, Generic[T]):
     retry_count: int = 3
     log: bool = True
 
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
+
     def run(self, *args, **kwargs) -> Tuple[T, bool]:
         for i in range(1, self.retry_count + 1):
             if i > 1 and self.log:
