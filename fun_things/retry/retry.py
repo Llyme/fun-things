@@ -1,5 +1,6 @@
 import traceback
-from typing import Any, Callable, Generic, NamedTuple, Tuple, TypeVar
+from typing import Any, Callable, Generic, NamedTuple, TypeVar, cast
+from .retry_response import RetryResponse
 
 T = TypeVar("T")
 
@@ -26,7 +27,7 @@ class Retry(NamedTuple, Generic[T]):
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
 
-    def run(self, *args, **kwargs) -> Tuple[T, bool]:
+    def run(self, *args, **kwargs):
         for i in range(1, self.retry_count + 1):
             if i > 1 and self.log:
                 print(f"({i}/{self.retry_count}) Retrying...")
@@ -37,19 +38,35 @@ class Retry(NamedTuple, Generic[T]):
                 if self.retry_handler != None and self.retry_handler(result):
                     continue
 
-                return result, True
+                return RetryResponse(
+                    value=result,
+                    ok=True,
+                    error=None,  # type: ignore
+                )
 
             except Exception as e:
                 if self.log:
                     print(traceback.format_exc())
 
+                ok = True
+
                 if self.error_handler != None:
-                    if not self.error_handler(e):
-                        break
+                    ok = self.error_handler(e)
+
+                if not ok:
+                    return RetryResponse(
+                        value=cast(T, None),
+                        ok=False,
+                        error=e,
+                    )
 
         if self.log:
             print(
                 f"Failed after retrying {self.retry_count} time(s)!",
             )
 
-        return None, False  # type: ignore
+        return RetryResponse(
+            value=cast(T, None),
+            ok=False,
+            error=None,  # type: ignore
+        )
