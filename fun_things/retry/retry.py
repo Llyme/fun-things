@@ -12,12 +12,12 @@ class Retry(NamedTuple, Generic[T]):
     """
 
     callable: Callable[..., T] = None  # type: ignore
-    error_handler: Callable[[Exception], bool] = None  # type: ignore
+    error_handler: Callable[["Retry", Exception, int], bool] = None  # type: ignore
     """
     If the return value is `False`,
     it will stop retrying.
     """
-    retry_handler: Callable[[T], bool] = None  # type: ignore
+    retry_handler: Callable[["Retry", T, int], bool] = None  # type: ignore
     """
     If return value is `True`,
     it will retry the `callable`.
@@ -46,7 +46,7 @@ class Retry(NamedTuple, Generic[T]):
             try:
                 result = self.callable(*args, **kwargs)
 
-                if self.retry_handler != None and self.retry_handler(result):
+                if self.retry_handler != None and self.retry_handler(self, result, i):
                     continue
 
                 return RetryResponse(
@@ -62,7 +62,7 @@ class Retry(NamedTuple, Generic[T]):
                 ok = True
 
                 if self.error_handler != None:
-                    ok = self.error_handler(e)
+                    ok = self.error_handler(self, e, i)
 
                 if not ok:
                     return RetryResponse(
