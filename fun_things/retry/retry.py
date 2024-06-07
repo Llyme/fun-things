@@ -1,6 +1,6 @@
 from time import sleep
 import traceback
-from typing import Callable, Generic, NamedTuple, TypeVar, cast
+from typing import Callable, Generic, NamedTuple, TypeVar, Union, cast
 from .retry_response import RetryResponse
 
 T = TypeVar("T")
@@ -23,7 +23,7 @@ class Retry(NamedTuple, Generic[T]):
     it will retry the `callable`.
     """
     retry_count: int = 3
-    intermission: float = 0
+    intermission: Union[float, Callable[["Retry"], float]] = 0
     """
     Sleep time between each retry.
     
@@ -40,8 +40,16 @@ class Retry(NamedTuple, Generic[T]):
                 if self.log:
                     print(f"({i}/{self.retry_count}) Retrying...")
 
-                if self.intermission > 0:
-                    sleep(self.intermission)
+                intermission: float = 0
+
+                if isinstance(self.intermission, Callable):
+                    intermission = self.intermission(self)
+
+                else:
+                    intermission = self.intermission
+
+                if intermission > 0:
+                    sleep(intermission)
 
             try:
                 result = self.callable(*args, **kwargs)
