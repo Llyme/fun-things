@@ -1,12 +1,14 @@
+from dataclasses import dataclass
 from time import sleep
 import traceback
-from typing import Callable, Generic, NamedTuple, TypeVar, Union, cast
+from typing import Callable, Generic, TypeVar, Union, cast
 from .retry_response import RetryResponse
 
 T = TypeVar("T")
 
 
-class Retry(NamedTuple, Generic[T]):
+@dataclass(frozen=True)
+class Retry(Generic[T]):
     """
     Allows a callable to be called again if it throws an error.
     """
