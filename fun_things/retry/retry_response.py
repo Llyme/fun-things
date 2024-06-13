@@ -1,9 +1,11 @@
-from typing import Generic, NamedTuple, TypeVar
+from dataclasses import dataclass
+from typing import Generic, TypeVar
 
-TValue = TypeVar("TValue")
+T = TypeVar("T")
 
 
-class RetryResponse(Generic[TValue], NamedTuple):
-    value: TValue
+@dataclass(frozen=True)
+class RetryResponse(Generic[T]):
+    value: T
     ok: bool
     error: Exception
