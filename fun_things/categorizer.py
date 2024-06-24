@@ -73,6 +73,9 @@ class Categorizer:
             key=self.__order,
         )
 
+        if len(others) == 0:
+            return sorted_result  # type: ignore
+
         return [
             (None, others),
             *sorted_result,
@@ -148,16 +151,25 @@ class Categorizer:
 
             # Category Normalization
 
-            if len(category) == 1 and isinstance(category, dict):
-                # Normalize singular sub-categories containing
-                # only 1 sub-category.
+            for _ in range(10):
+                if len(category) == 1 and isinstance(category, dict):
+                    # Normalize singular sub-categories containing
+                    # only 1 sub-category.
 
-                sub_keyword, sub_category = next(iter(category.items()))
+                    sub_keyword, sub_category = next(
+                        iter(
+                            category.items(),
+                        )
+                    )
 
-                if sub_keyword != "*":
-                    keyword = f"{sub_keyword}_{keyword}"
+                    if sub_keyword != "*":
+                        keyword = f"{sub_keyword}_{keyword}"
 
-                category = sub_category
+                    category = sub_category
+
+                    continue
+
+                break
 
             if len(category) == 1 and isinstance(category, list):
                 # Category is an array with only 1 item.
