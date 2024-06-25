@@ -190,7 +190,14 @@ class Categorizer:
         self.__ignored_keywords: set = set()
         self.__ignored_values: set = set()
 
-        return self.__categorize(values)  # type: ignore
+        result = self.__categorize(values)
+
+        if isinstance(result, list):
+            return {
+                "*": result,
+            }
+
+        return result
 
 
 def categorizer(values: Iterable[str]):
