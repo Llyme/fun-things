@@ -56,7 +56,7 @@ class Categorizer(Generic[T]):
         others: List[T] = []
 
         for raw_value in values:
-            value = self.__value_selector(raw_value)
+            value = self.__get_value(raw_value)
             keywords = value.split(self.delimiter)
             ok = False
 
@@ -111,7 +111,7 @@ class Categorizer(Generic[T]):
                     self.__ignored_values.add(value)
                     result.append(value)
 
-            return [*sorted(result, key=self.__value_selector)]
+            return [*sorted(result, key=self.__get_value)]
 
         all_one = map(lambda v: len(v[1]) == 1, grouped)
         all_one = all(all_one)
@@ -128,7 +128,7 @@ class Categorizer(Generic[T]):
                 self.__ignored_values.add(value)
                 result.append(value)
 
-            return [*sorted(result, key=self.__value_selector)]
+            return [*sorted(result, key=self.__get_value)]
 
     def __categorize(self, values: Iterable[T]):
         grouped = self.__group(values)
@@ -146,12 +146,13 @@ class Categorizer(Generic[T]):
             if keyword in self.__ignored_keywords:
                 continue
 
-            children = list(
-                filter(
+            children = [
+                *filter(
                     lambda child: child not in self.__ignored_values,
                     children,
-                )
-            )
+                ),
+                *others,
+            ]
 
             if children == []:
                 # Nothing to categorize here.
@@ -160,6 +161,12 @@ class Categorizer(Generic[T]):
             self.__ignored_keywords.add(keyword)
 
             category = self.__categorize(children)
+
+            if category == []:
+                continue
+
+            if category == {}:
+                continue
 
             # Category Normalization
 
@@ -186,6 +193,7 @@ class Categorizer(Generic[T]):
             if len(category) == 1 and isinstance(category, list):
                 # Category is an array with only 1 item.
                 # Put in 'others'.
+                # self.__ignored_keywords.remove(keyword)
                 others.append(category[0])
                 continue
 
@@ -193,8 +201,20 @@ class Categorizer(Generic[T]):
 
             result[keyword] = category
 
+        others = [
+            *filter(
+                lambda value: value in self.__ignored_values,
+                others,
+            )
+        ]
+
         if len(others) > 0:
-            result["*"] = [*sorted(others, key=self.__value_selector)]
+            result["*"] = [
+                *sorted(
+                    others,
+                    key=self.__get_value,
+                )
+            ]
 
         return result
 
@@ -205,6 +225,7 @@ class Categorizer(Generic[T]):
     ) -> dict:
         self.__ignored_keywords: set = set()
         self.__ignored_values: set = set()
+        self.__values: Dict[T, str] = {}
         self.__value_selector = value_selector
 
         result = self.__categorize(values)
@@ -215,6 +236,12 @@ class Categorizer(Generic[T]):
             }
 
         return result
+
+    def __get_value(self, key: T):
+        if key not in self.__values:
+            self.__values[key] = self.__value_selector(key)
+
+        return self.__values[key]
 
 
 def categorizer(
