@@ -1,13 +1,15 @@
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
+
+T = TypeVar("T")
 
 
-class Categorizer:
+class Categorizer(Generic[T]):
     delimiter = "_"
     """
     The separator when splitting values into keywords.
     """
 
-    def __order(self, item: Tuple[str, List[str]]):
+    def __order(self, item: Tuple[str, List[T]]):
         """
         The sorting order.
         """
@@ -28,8 +30,8 @@ class Categorizer:
 
     def __group(
         self,
-        values: Iterable[str],
-    ) -> List[Tuple[Optional[str], List[str]]]:
+        values: Iterable[T],
+    ) -> List[Tuple[Optional[str], List[T]]]:
         """
         Group & sorts the values.
 
@@ -37,14 +39,15 @@ class Categorizer:
 
         Values already categorized are marked as 'others'.
         """
-        result: Dict[str, list] = {}
+        result: Dict[str, List[T]] = {}
         values = filter(
             lambda value: value not in self.__ignored_values,
             values,
         )
-        others = []
+        others: List[T] = []
 
-        for value in values:
+        for raw_value in values:
+            value = self.__value_selector(raw_value)
             keywords = value.split(self.delimiter)
             ok = False
 
@@ -55,14 +58,14 @@ class Categorizer:
                 if keyword not in result:
                     result[keyword] = []
 
-                result[keyword].append(value)
+                result[keyword].append(raw_value)
 
                 ok = True
 
             if not ok:
                 # Value was ignored.
                 # Mark as 'others'.
-                others.append(value)
+                others.append(raw_value)
 
         sorted_result = sorted(
             result.items(),
@@ -83,7 +86,7 @@ class Categorizer:
 
     def __get_array(
         self,
-        grouped: List[Tuple[Optional[str], List[str]]],
+        grouped: List[Tuple[Optional[str], List[T]]],
     ):
         """
         Check if the categories can be a single array.
@@ -118,7 +121,7 @@ class Categorizer:
 
             return [*sorted(result)]
 
-    def __categorize(self, values: Iterable[str]):
+    def __categorize(self, values: Iterable[T]):
         grouped = self.__group(values)
         all_one = self.__get_array(grouped)
 
@@ -186,9 +189,14 @@ class Categorizer:
 
         return result
 
-    def categorize(self, values: Iterable[str]) -> dict:
+    def categorize(
+        self,
+        values: Iterable[T],
+        value_selector: Callable[[T], str],
+    ) -> dict:
         self.__ignored_keywords: set = set()
         self.__ignored_values: set = set()
+        self.__value_selector = value_selector
 
         result = self.__categorize(values)
 
@@ -200,5 +208,8 @@ class Categorizer:
         return result
 
 
-def categorizer(values: Iterable[str]):
-    return Categorizer().categorize(values)
+def categorizer(
+    values: Iterable[T],
+    value_selector: Callable[[T], str] = lambda v: v,  # type: ignore
+):
+    return Categorizer().categorize(values, value_selector)
