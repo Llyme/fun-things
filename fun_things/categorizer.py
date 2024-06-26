@@ -1,4 +1,13 @@
-from typing import Callable, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
+from typing import (
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 
 T = TypeVar("T")
 
@@ -102,7 +111,7 @@ class Categorizer(Generic[T]):
                     self.__ignored_values.add(value)
                     result.append(value)
 
-            return [*sorted(result)]
+            return [*sorted(result, key=self.__value_selector)]
 
         all_one = map(lambda v: len(v[1]) == 1, grouped)
         all_one = all(all_one)
@@ -119,7 +128,7 @@ class Categorizer(Generic[T]):
                 self.__ignored_values.add(value)
                 result.append(value)
 
-            return [*sorted(result)]
+            return [*sorted(result, key=self.__value_selector)]
 
     def __categorize(self, values: Iterable[T]):
         grouped = self.__group(values)
@@ -185,7 +194,7 @@ class Categorizer(Generic[T]):
             result[keyword] = category
 
         if len(others) > 0:
-            result["*"] = [*sorted(others)]
+            result["*"] = [*sorted(others, key=self.__value_selector)]
 
         return result
 
