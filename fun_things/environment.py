@@ -76,6 +76,7 @@ CONFIDENTIAL_KEYWORDS = [
     "uri",
     "secret",
     "passphrase",
+    "key",
 ]
 
 
