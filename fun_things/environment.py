@@ -118,14 +118,17 @@ def all():
     """
     Requires `python-decouple`.
     """
-    if config.config == None:
-        config("", default=None)
+    try:
+        if config.config == None:
+            config("", default=None)
 
-    if config.config != None:
-        return {
-            **config.config.repository.data,
-            **os.environ,
-        }
+        if config.config != None:
+            return {
+                **config.config.repository.data,
+                **os.environ,
+            }
+    except:
+        pass
 
     return {**os.environ}
 
