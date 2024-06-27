@@ -229,3 +229,5 @@ def pretty_print(
         print(
             chalk.dim.gray(f"and {extra_fields_count} more..."),
         )
+
+    print()
