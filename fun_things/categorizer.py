@@ -1,5 +1,4 @@
 from typing import (
-    Any,
     Callable,
     Dict,
     Generic,
@@ -13,10 +12,16 @@ T = TypeVar("T")
 
 
 class Categorizer(Generic[T]):
-    delimiter = "_"
-    """
-    The separator when splitting values into keywords.
-    """
+    def __init__(
+        self,
+        values: Iterable[T],
+        value_selector: Callable[[T], str],
+        delimiter: str,
+    ):
+        self.__delimiter = delimiter
+        self.__raw_values = [*values]
+        self.__value_selector = value_selector
+        self.__values: Dict[T, str] = {}
 
     def __keyword_sorting_order(self, keyword: str):
         try:
@@ -33,194 +38,99 @@ class Categorizer(Generic[T]):
     def __sorting_order(self, item: Tuple[str, List[T]]):
         return len(item[1]) * self.__keyword_sorting_order(item[0])
 
-    def __by_keywords(
+    def __most_relevant_keyword(
         self,
-        values: Iterable[T],
+        items: Iterable[T],
+        ignored_keywords: List[str],
     ):
-        """
-        Groups the values by keywords.
-        """
         result: Dict[str, List[T]] = {}
-        values = filter(
-            lambda value: value not in self.__ignored_values,
-            values,
-        )
 
-        for raw_value in values:
-            value = self.__get_value(raw_value)
-            keywords = value.split(self.delimiter)
+        for item in items:
+            value = self.__get_value(item)
+            keywords = value.split(self.__delimiter)
 
             for keyword in keywords:
+                if keyword in ignored_keywords:
+                    continue
+
                 if keyword not in result:
                     result[keyword] = []
 
-                result[keyword].append(raw_value)
+                result[keyword].append(item)
 
-        return sorted(
+        if not any(result):
+            return "", None
+
+        return max(
             result.items(),
             key=self.__sorting_order,
         )
 
-    def __get_array(
+    def __by_keywords(
         self,
-        grouped: List[Tuple[str, List[T]]],
+        items: Iterable[T],
+        ignored_keywords: List[str],
     ):
         """
-        Check if the categories can be a single array.
+        Groups the values by keywords.
         """
+        items = [*items]
 
-        if len(grouped) == 1:
-            # There's only 1 category.
-            # Transform into an array.
-            result = []
-
-            for value in grouped[0][1]:
-                if value not in self.__ignored_values:
-                    self.__ignored_values.add(value)
-                    result.append(value)
-
-            return sorted(
-                result,
-                key=self.__get_value,
+        while True:
+            keyword, sub_items = self.__most_relevant_keyword(
+                items,
+                ignored_keywords,
             )
 
-        all_one = map(
-            lambda value: len(value[1]) == 1,
-            grouped,
-        )
-        all_one = all(all_one)
+            if sub_items == None:
+                break
 
-        if all_one:
-            # All categories only have 1 item.
-            # Combine them.
-            result = []
+            yield keyword, sub_items
 
-            for _, (value,) in grouped:
-                if value in self.__ignored_values:
-                    continue
+            for item in sub_items:
+                items.remove(item)
 
-                self.__ignored_values.add(value)
-                result.append(value)
-
-            return sorted(
-                result,
-                key=self.__get_value,
-            )
-
-        return None
-
-    def __normalize(self, keyword: str, items: Any):
-        while len(items) == 1 and isinstance(items, dict):
-            # Normalize singular sub-categories containing
-            # only 1 sub-category.
-
-            sub_keyword, sub_category = next(
-                iter(
-                    items.items(),
-                )
-            )
-
-            if sub_keyword != "*":
-                keyword = f"{sub_keyword}_{keyword}"
-
-            items = sub_category
-
-            continue
-
-        return keyword, items
+        if len(items) > 0:
+            yield None, items
 
     def __categorize(
         self,
-        values: Iterable[T],
+        items: List[T],
         ignored_keywords: List[str],
     ):
-        grouped = self.__by_keywords(values)
-        all_one = self.__get_array(grouped)
-
-        if all_one != None:
-            return all_one
-
+        by_keywords = self.__by_keywords(
+            items,
+            ignored_keywords,
+        )
         result = {}
         others = []
 
-        while len(grouped) > 0:
-            keyword, children = grouped.pop()
-
-            if keyword in ignored_keywords:
+        for keyword, sub_items in by_keywords:
+            if len(sub_items) == 1:
+                others.append(sub_items[0])
                 continue
 
-            children = [
-                *filter(
-                    lambda child: child not in self.__ignored_values,
-                    children,
-                )
-            ]
+            if keyword == None:
+                for item in sub_items:
+                    others.append(item)
 
-            if children == []:
-                # Nothing to categorize here.
                 continue
 
-            category = self.__categorize(
-                children,
+            value = self.__categorize(
+                sub_items,
                 [*ignored_keywords, keyword],
             )
 
-            if category == []:
-                continue
+            if len(value) == 1:
+                sub_keyword, value = next(iter(value.items()))
 
-            if category == {}:
-                continue
+                if sub_keyword != None:
+                    keyword = f"{keyword}_{sub_keyword}"
 
-            keyword, category = self.__normalize(
-                keyword,
-                category,
-            )
-
-            if len(category) == 1 and isinstance(category, list):
-                # Category is an array with only 1 item.
-                # Put in 'others'.
-                others.append(category[0])
-                continue
-
-            # Result
-
-            result[keyword] = category
-
-            for item in category:
-                self.__ignored_values.add(item)
-
-        others = [
-            *filter(
-                lambda value: value in self.__ignored_values,
-                others,
-            )
-        ]
+            result[keyword] = value
 
         if len(others) > 0:
-            result["*"] = [
-                *sorted(
-                    others,
-                    key=self.__get_value,
-                )
-            ]
-
-        return result
-
-    def categorize(
-        self,
-        values: Iterable[T],
-        value_selector: Callable[[T], str],
-    ) -> dict:
-        self.__ignored_values: set = set()
-        self.__values: Dict[T, str] = {}
-        self.__value_selector = value_selector
-
-        result = self.__categorize(values, [])
-
-        if isinstance(result, list):
-            return {
-                "*": result,
-            }
+            result[None] = others
 
         return result
 
@@ -230,9 +140,20 @@ class Categorizer(Generic[T]):
 
         return self.__values[key]
 
+    def run(self):
+        return self.__categorize(
+            self.__raw_values,
+            [],
+        )
+
 
 def categorizer(
     values: Iterable[T],
     value_selector: Callable[[T], str] = lambda v: v,  # type: ignore
+    delimiter: str = "_",
 ):
-    return Categorizer().categorize(values, value_selector)
+    return Categorizer(
+        values=values,
+        value_selector=value_selector,
+        delimiter=delimiter,
+    ).run()
