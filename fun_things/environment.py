@@ -159,18 +159,15 @@ def pretty_print(
         )
     ]
 
-    if config.config == None:
-        config("", default=None)
-
-    if config.config != None:
-        fields = config.config.repository.data
-
     fields = [
         *filter(
             lambda field: field[0].lower() not in ignore_keys,
             all().items(),
         )
     ]
+
+    if not any(fields):
+        return
 
     extra_fields_count = len(fields) - max_fields
     too_many_fields = extra_fields_count > min_hidden_fields
