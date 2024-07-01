@@ -77,6 +77,7 @@ CONFIDENTIAL_KEYWORDS = [
     "secret",
     "passphrase",
     "key",
+    "connection_string",
 ]
 
 
@@ -178,7 +179,7 @@ def pretty_print(
     key_len = max(
         max(
             map(
-                lambda v: len(v[0]),
+                lambda field: len(field[0]),
                 fields,
             )
         ),
@@ -193,7 +194,7 @@ def pretty_print(
     )
     value_len = max(
         map(
-            lambda v: len(v[1]),
+            lambda field: len(field[1]),
             value_len,
         )
     )
@@ -202,8 +203,8 @@ def pretty_print(
     value_len = min(value_len, max_field_length - key_len)
 
     print(
-        chalk.bgYellow.bold("KEY".ljust(key_len + 1)),
-        chalk.bgWhite.bold("VALUE".ljust(value_len)),
+        chalk.black.bgYellow.bold("KEY".ljust(key_len + 1)),
+        chalk.black.bgWhite.bold("VALUE".ljust(value_len)),
     )
 
     for key, value in fields:
