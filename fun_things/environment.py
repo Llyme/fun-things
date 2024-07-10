@@ -1,7 +1,6 @@
 import os
 import sys
 from typing import Any, Callable, Iterable, List, TypeVar
-from decouple import config  # type: ignore
 from simple_chalk import chalk  # type: ignore
 from .undefined import undefined
 
@@ -120,25 +119,6 @@ def __get_value_text(
     return text, do_ellipses
 
 
-def all():
-    """
-    Requires `python-decouple`.
-    """
-    try:
-        if config.config == None:
-            config("", default=None)
-
-        if config.config != None:
-            return {
-                **config.config.repository.data,
-                **os.environ,
-            }
-    except:
-        pass
-
-    return {**os.environ}
-
-
 def pretty_print(
     ignore_keys: Iterable[str] = SPECIAL_KEYS,
     confidential_keywords: Iterable[str] = CONFIDENTIAL_KEYWORDS,
@@ -150,7 +130,7 @@ def pretty_print(
     max_field_length: int = 80,
 ):
     """
-    Requires `python-decouple` and `simple-chalk`.
+    Requires `simple-chalk`.
     """
     confidential_keywords = [
         *map(
@@ -168,7 +148,7 @@ def pretty_print(
     fields = [
         *filter(
             lambda field: field[0].lower() not in ignore_keys,
-            all().items(),
+            os.environ.items(),
         )
     ]
 
