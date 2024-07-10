@@ -248,6 +248,6 @@ def env(
 
     if write_to_env and default != None:
         for key in keys:
-            os.environ[key] = default
+            os.environ[key] = str(default)
 
     return default
