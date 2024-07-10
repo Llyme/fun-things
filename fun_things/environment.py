@@ -1,10 +1,15 @@
 import os
 import sys
-from typing import Iterable, List
+from typing import Any, Callable, Iterable, List, TypeVar
 from decouple import config  # type: ignore
 from simple_chalk import chalk  # type: ignore
+from .undefined import undefined
 
 
+"""
+Generic undefined data type.
+"""
+T = TypeVar("T")
 SPECIAL_KEYS = [
     "SHELL",
     "SESSION_MANAGER",
@@ -233,3 +238,28 @@ def pretty_print(
         )
 
     print()
+
+
+def env(
+    *keys,
+    cast: Callable[[Any], T] = str,
+    default: Any = undefined,
+) -> T:
+    """
+    keys: The keys that will be searched.\
+    Starts from the first index,\
+    until it finds an existing pair.
+    cast: Casts the values with the given callable.\
+    By default, uses 'str'.
+    default: The default value.\
+    If not provided, will raise an error if not found.
+    """
+    for key in keys:
+        if key in os.environ:
+            return cast(os.environ[key])
+
+    if default == undefined:
+        text = "', '".join(keys)
+        raise Exception(f"'{text}' is not in the environment!")
+
+    return default
