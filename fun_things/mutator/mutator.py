@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Set
+from typing import Callable, Dict, List, Set, Union
 
 
 class Mutator:
@@ -65,13 +65,19 @@ class Mutator:
 
         return self
 
-    def replace(self, callable: Callable):
+    def replace(self, replacer: Union[Callable, object]):
         """
         Replaces the corresponding methods
-        with the given callable.
+        with the given callable,
+        or the object's method with the same name.
         """
+        is_callable = callable(replacer)
+
         for name in self.__names:
-            self.__replacers[name] = callable
+            if is_callable:
+                self.__replacers[name] = replacer
+            else:
+                self.__replacers[name] = getattr(replacer, name)
 
         return self
 
