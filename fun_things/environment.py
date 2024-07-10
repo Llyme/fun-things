@@ -224,6 +224,7 @@ def env(
     *keys,
     cast: Callable[[Any], T] = str,
     default: Any = undefined,
+    write_to_env=False,
 ) -> T:
     """
     keys: The keys that will be searched.\
@@ -233,6 +234,9 @@ def env(
     By default, uses 'str'.
     default: The default value.\
     If not provided, will raise an error if not found.
+    write_to_env: If `True`,\
+    the default value is written in `os.environ`.\
+    Does not affect any files.
     """
     for key in keys:
         if key in os.environ:
@@ -241,5 +245,9 @@ def env(
     if default == undefined:
         text = "', '".join(keys)
         raise Exception(f"'{text}' is not in the environment!")
+
+    if write_to_env and default != None:
+        for key in keys:
+            os.environ[key] = default
 
     return default
