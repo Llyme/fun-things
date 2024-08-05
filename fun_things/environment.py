@@ -3,6 +3,7 @@ import sys
 from typing import Any, Callable, Iterable, List, TypeVar
 from simple_chalk import chalk  # type: ignore
 from .undefined import undefined
+from . import parse
 
 
 """
@@ -240,6 +241,9 @@ def env(
     """
     for key in keys:
         if key in os.environ:
+            if cast == bool:
+                return parse.bool(os.environ[key])  # type: ignore
+
             return cast(os.environ[key])
 
     if default == undefined:
