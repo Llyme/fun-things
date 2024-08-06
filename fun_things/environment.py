@@ -270,6 +270,8 @@ def env(
     if len(keys) == 0:
         raise Exception("At least 1 key must be provided!")
 
+    mentioned_keys[keys[0]] = default
+
     for key in keys:
         if key in os.environ:
             if cast == bool:
@@ -280,8 +282,6 @@ def env(
     if default == undefined:
         text = "', '".join(keys)
         raise Exception(f"'{text}' is not in the environment!")
-
-    mentioned_keys[keys[0]] = default
 
     if write_to_env and default != None:
         for key in keys:
