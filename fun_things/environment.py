@@ -85,6 +85,11 @@ CONFIDENTIAL_KEYWORDS = [
     "connection_string",
 ]
 
+mentioned_keys = set()
+"""
+Set of environment keys mentioned in `env()`.
+"""
+
 
 def __caller_path():
     frame = sys._getframe()
@@ -228,10 +233,12 @@ def env(
     write_to_env=False,
 ) -> T:
     """
-    keys: The keys that will be searched.\
+    keys:\
+    The keys that will be searched.\
     Starts from the first index,\
-    until it finds an existing pair.
-    cast: Casts the values with the given callable.\
+    until it finds an existing pair.\
+    Keys mentioned here are recorded.
+    cast: Selects the values with the given callable.\
     By default, uses 'str'.
     default: The default value.\
     If not provided, will raise an error if not found.
@@ -239,6 +246,11 @@ def env(
     the default value is written in `os.environ`.\
     Does not affect any files.
     """
+    if len(keys) == 0:
+        raise Exception("At least 1 key must be provided!")
+
+    mentioned_keys.add(keys[0])
+
     for key in keys:
         if key in os.environ:
             if cast == bool:
