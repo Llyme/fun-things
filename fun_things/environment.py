@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any, Callable, Iterable, List, TypeVar
+from typing import Any, Callable, Iterable, List, Optional, TypeVar
 from simple_chalk import chalk  # type: ignore
 from .undefined import undefined
 from . import parse
@@ -85,7 +85,7 @@ CONFIDENTIAL_KEYWORDS = [
     "connection_string",
 ]
 
-mentioned_keys = set()
+mentioned_keys = {}
 """
 Set of environment keys mentioned in `env()`.
 """
@@ -126,6 +126,7 @@ def __get_value_text(
 
 
 def pretty_print(
+    keys: Optional[Iterable[str]] = None,
     ignore_keys: Iterable[str] = SPECIAL_KEYS,
     confidential_keywords: Iterable[str] = CONFIDENTIAL_KEYWORDS,
     max_fields: int = 64,
@@ -137,6 +138,9 @@ def pretty_print(
 ):
     """
     Requires `simple-chalk`.
+
+    keys: If provided,\
+    all related environment fields will be shown.
     """
     confidential_keywords = [
         *map(
@@ -144,19 +148,36 @@ def pretty_print(
             confidential_keywords,
         )
     ]
-    ignore_keys = [
-        *map(
-            lambda key: key.lower(),
-            ignore_keys,
-        )
-    ]
 
-    fields = [
-        *filter(
-            lambda field: field[0].lower() not in ignore_keys,
-            os.environ.items(),
-        )
-    ]
+    if keys != None:
+        fields = []
+
+        for key in keys:
+            if key in os.environ:
+                fields.append((key, os.environ[key]))
+
+            elif key in mentioned_keys:
+                value = mentioned_keys[key]
+
+                if value == None:
+                    value = ""
+
+                fields.append((key, str(value)))
+
+    else:
+        ignore_keys = [
+            *map(
+                lambda key: key.lower(),
+                ignore_keys,
+            )
+        ]
+
+        fields = [
+            *filter(
+                lambda field: field[0].lower() not in ignore_keys,
+                os.environ.items(),
+            )
+        ]
 
     if not any(fields):
         return
@@ -249,8 +270,6 @@ def env(
     if len(keys) == 0:
         raise Exception("At least 1 key must be provided!")
 
-    mentioned_keys.add(keys[0])
-
     for key in keys:
         if key in os.environ:
             if cast == bool:
@@ -261,6 +280,8 @@ def env(
     if default == undefined:
         text = "', '".join(keys)
         raise Exception(f"'{text}' is not in the environment!")
+
+    mentioned_keys[keys[0]] = default
 
     if write_to_env and default != None:
         for key in keys:
