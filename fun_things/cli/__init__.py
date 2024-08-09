@@ -1,16 +1,17 @@
 import argparse
-from .freeze import freeze
+from .freeze import Freeze
 
 
 def cli():
     parser = argparse.ArgumentParser(
         description="Pub/Sub consumer common.",
     )
-    subparsers = parser.add_subparsers(
-        dest="command",
-    )
 
-    freeze(subparsers)
+    Freeze().run(
+        parser.add_subparsers(
+            dest="command",
+        )
+    )
 
     args = parser.parse_args()
 

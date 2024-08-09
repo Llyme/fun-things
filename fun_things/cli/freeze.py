@@ -2,113 +2,178 @@ import os
 import re
 from argparse import _SubParsersAction
 from configparser import ConfigParser
-from typing import List
-
-RX_BITBUCKET = r"^-e git\+https://(.+)@bitbucket\.org\/(.+)\/(.+)\.git@(.+)#egg"
-IGNORES = [
-    "pkg_resources==0.0.0",
-]
+from typing import List, Optional, Tuple
+from simple_chalk import chalk  # type: ignore
 
 
-def _setup_cfg(args, lines: List[str]):
-    if not args.cfg:
-        return
-
-    config = ConfigParser(
-        allow_no_value=True,
-        comment_prefixes=[],
-        strict=False,
+class Freeze:
+    RX_BITBUCKET_EDITABLE = (
+        r"^-e git\+https:\/\/(?:(.+)@)?bitbucket\.org\/(.+)\/(.+)\.git@(.+)#egg"
     )
-
-    config.read(args.cfg_path)
-
-    if not config.has_option("options", "install_requires"):
-        return
-
-    text = "\n" + "".join(lines).strip()
-    config["options"]["install_requires"] = text
-
-    with open(args.cfg_path, "w") as f:
-        config.write(f)
-
-    print(f"Updated `{args.cfg_path}`.")
-
-
-def _bitbucket(line: str):
-    match = re.match(RX_BITBUCKET, line)
-
-    if match == None:
-        return None
-
-    access_token = match[1]
-    path = match[2]
-    name = match[3]
-    commit_hash = match[4]
-
-    return (
-        f"{name} @ git+https://{access_token}@bitbucket.org/{path}/{name}@{commit_hash}"
+    RX_BITBUCKET = (
+        r"^(.+)\s@\sgit\+https:\/\/bitbucket\.org\/(.+)\/(.+)\.git(?:@(.+))?$"
     )
+    IGNORES = [
+        "pkg_resources==0.0.0",  # This can't be installed.
+    ]
 
+    def __add(
+        self,
+        line: str,
+        message: Optional[str] = None,
+    ):
+        if message == None:
+            message = line
 
-def _selector(line: str):
-    line = line.strip()
+        print(message)
 
-    if line in IGNORES:
-        return ""
+        self.__lines.append(line.strip() + "\r\n")
 
-    bitbucket = _bitbucket(line)
+    def __warn(self):
+        self.__warns += 1
 
-    if bitbucket != None:
-        line = bitbucket
+    def __setup_cfg(self, args, lines: List[str]):
+        if not args.cfg:
+            return
 
-    print(line)
-    return line + "\r\n"
+        config = ConfigParser(
+            allow_no_value=True,
+            comment_prefixes=[],
+            strict=False,
+        )
 
+        config.read(args.cfg_path)
 
-def _main(args):
-    filepath = args.f
+        if not config.has_option("options", "install_requires"):
+            return
 
-    os.system(f"pip freeze > {filepath}")
+        text = "\n" + "".join(lines).strip()
+        config["options"]["install_requires"] = text
 
-    with open(filepath, "r") as f:
-        lines = f.readlines()
-        lines = [*map(_selector, lines)]
+        with open(args.cfg_path, "w") as f:
+            config.write(f)
 
-    _setup_cfg(args, lines)
+        print(chalk.gray.dim(f"Updated `{args.cfg_path}`."))
 
-    with open(filepath, "w") as f:
-        f.writelines(lines)
+    def __bitbucket_editable(self, line: str):
+        match = re.match(self.RX_BITBUCKET_EDITABLE, line)
 
-    print(f"Updated `{filepath}`.")
+        if match == None:
+            return False
 
+        access_token = match[1]
+        access_token = f"{access_token}@" if access_token != None else ""
+        path = match[2]
+        name = match[3]
+        commit_hash = match[4]
+        text = f"{name} @ git+https://{access_token}bitbucket.org/{path}/{name}@{commit_hash}"
 
-def freeze(subparsers: _SubParsersAction):
-    parser = subparsers.add_parser(
-        "freeze",
-        help="pip freeze",
-    )
+        self.__add(
+            line,
+            chalk.green(text),
+        )
 
-    parser.add_argument(
-        "-f",
-        type=str,
-        help="filepath",
-        default="requirements.txt",
-        required=False,
-    )
+        return True
 
-    parser.add_argument(
-        "-cfg",
-        type=bool,
-        help="If it should write to `setup.cfg`.",
-        default=True,
-        required=False,
-    )
-    parser.add_argument(
-        "-cfg_path",
-        type=str,
-        help="Path to `setup.cfg`.",
-        default="setup.cfg",
-        required=False,
-    )
+    def __bitbucket(self, line: str):
+        match = re.match(self.RX_BITBUCKET, line)
 
-    parser.set_defaults(func=_main)
+        if match == None:
+            return False
+
+        # name = match[1]
+        # path = match[2]
+        # repository = match[3]
+        # commit_hash = match[4]
+
+        self.__add(
+            line,
+            "{0} {1}".format(
+                chalk.yellow(line),
+                chalk.green("# This might not work properly."),
+            ),
+        )
+        self.__warn()
+
+        return True
+
+    def __default(self, line: str):
+        self.__add(line)
+        return True
+
+    def __selector(self, line: str):
+        line = line.strip()
+
+        if line in self.IGNORES:
+            return
+
+        for fn in [
+            self.__bitbucket_editable,
+            self.__bitbucket,
+            self.__default,
+        ]:
+            ok = fn(line)
+
+            if ok:
+                break
+
+    def __main(self, args):
+        filepath = args.f
+
+        os.system(f"pip freeze > {filepath}")
+
+        with open(filepath, "r") as f:
+            for line in f.readlines():
+                self.__selector(line)
+
+        print()
+
+        self.__setup_cfg(args, self.__lines)
+
+        with open(filepath, "w") as f:
+            f.writelines(self.__lines)
+
+        print(chalk.gray.dim(f"Updated `{filepath}`."))
+
+        print()
+
+        if self.__warns > 0:
+            text = "You have {0} warning(s). Scroll up.".format(
+                self.__warns,
+            )
+
+            print(chalk.bgYellow.bold(text))
+
+    def run(self, subparsers: _SubParsersAction):
+        self.__lines: List[str] = []
+        self.__warns = 0
+
+        parser = subparsers.add_parser(
+            "freeze",
+            help="pip freeze",
+        )
+
+        parser.add_argument(
+            "-f",
+            type=str,
+            help="filepath",
+            default="requirements.txt",
+            required=False,
+        )
+
+        parser.add_argument(
+            "-cfg",
+            type=bool,
+            help="If it should write to `setup.cfg`.",
+            default=True,
+            required=False,
+        )
+        parser.add_argument(
+            "-cfg_path",
+            type=str,
+            help="Path to `setup.cfg`.",
+            default="setup.cfg",
+            required=False,
+        )
+
+        parser.set_defaults(func=self.__main)
