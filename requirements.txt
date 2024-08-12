@@ -1,1 +1,1 @@
-simple-chalk==0.1.0
+simple-chalk
