@@ -69,7 +69,7 @@ class Freeze:
         text = f"{name} @ git+https://{access_token}bitbucket.org/{path}/{name}@{commit_hash}"
 
         self.__add(
-            line,
+            text,
             chalk.green(text),
         )
 
