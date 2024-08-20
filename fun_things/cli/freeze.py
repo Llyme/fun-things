@@ -3,7 +3,11 @@ import re
 from argparse import _SubParsersAction
 from configparser import ConfigParser
 from typing import List, Optional, Tuple
-from simple_chalk import chalk  # type: ignore
+
+try:
+    from simple_chalk import chalk  # type: ignore
+except:
+    chalk = lambda v: v
 
 
 class Freeze:

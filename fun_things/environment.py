@@ -1,10 +1,13 @@
 import os
 import sys
 from typing import Any, Callable, Iterable, List, Optional, TypeVar
-from simple_chalk import chalk  # type: ignore
 from .undefined import undefined
 from . import parse
 
+try:
+    from simple_chalk import chalk  # type: ignore
+except:
+    chalk = lambda v: v
 
 """
 Generic undefined data type.

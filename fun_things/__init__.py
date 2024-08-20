@@ -7,3 +7,4 @@ from .categorizer import categorizer
 from .mutator import mutate
 from .undefined import undefined
 from .cli import cli
+from .generic_json_encoder import GenericJSONEncoder

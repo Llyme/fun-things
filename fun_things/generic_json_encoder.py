@@ -1,7 +1,12 @@
 from datetime import datetime
 from json import JSONEncoder
 
-from bson import ObjectId
+try:
+    from bson import ObjectId
+except:
+
+    class ObjectId:
+        pass
 
 
 class GenericJSONEncoder(JSONEncoder):

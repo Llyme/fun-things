@@ -1,7 +1,11 @@
 import logging
 import sys
 from typing import Callable
-from simple_chalk import chalk  # type: ignore
+
+try:
+    from simple_chalk import chalk  # type: ignore
+except:
+    chalk = lambda v: v
 
 
 class LevelFilter(logging.Filter):

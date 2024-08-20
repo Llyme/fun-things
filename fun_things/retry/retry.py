@@ -37,7 +37,9 @@ class Retry(Generic[T]):
         return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        for i in range(1, self.retry_count + 1):
+        max_attempts_count = self.retry_count + 1
+
+        for i in range(1, max_attempts_count):
             if i > 1:
                 if self.log:
                     print(f"({i}/{self.retry_count}) Retrying...")
@@ -63,6 +65,8 @@ class Retry(Generic[T]):
                     value=result,
                     ok=True,
                     error=None,  # type: ignore
+                    attempts=i,
+                    max_attempts_count=max_attempts_count,
                 )
 
             except Exception as e:
@@ -79,6 +83,8 @@ class Retry(Generic[T]):
                         value=cast(T, None),
                         ok=False,
                         error=e,
+                        attempts=i,
+                        max_attempts_count=max_attempts_count,
                     )
 
         if self.log:
@@ -90,4 +96,6 @@ class Retry(Generic[T]):
             value=cast(T, None),
             ok=False,
             error=None,  # type: ignore
+            attempts=self.retry_count + 1,
+            max_attempts_count=max_attempts_count,
         )

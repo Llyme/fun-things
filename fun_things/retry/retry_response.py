@@ -9,3 +9,5 @@ class RetryResponse(Generic[T]):
     value: T
     ok: bool
     error: Exception
+    attempts: int
+    max_attempts_count: int
