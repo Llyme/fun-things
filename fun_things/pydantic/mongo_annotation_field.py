@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class MongoAnnotationPayload:
+class MongoAnnotationField:
     annotation: "MongoAnnotation"
     key: str
     value: Any
