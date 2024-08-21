@@ -1,3 +1,3 @@
 from .mongo_annotation import MongoAnnotation, ignore_null
-from .mongo_annotation_post_processor import MongoAnnotationUpdatePostProcessor
+from .mongo_annotation_writer import MongoAnnotationWriter
 from .mongo_annotation_field import MongoAnnotationField
