@@ -66,11 +66,16 @@ class MongoAnnotation:
         return cls
 
     @classmethod
-    def query_update(cls, model: BaseModel):
+    def query_update(
+        cls,
+        model: BaseModel,
+        *dump_args,
+        **dump_kwargs,
+    ):
         """
         Returns a query object for updating in MongoDB.
         """
-        dump = model.model_dump()
+        dump = model.model_dump(*dump_args, **dump_kwargs)
         annotations = model.__class__.__dict__["__annotations__"]
         query = {}
 
