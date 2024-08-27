@@ -4,7 +4,8 @@ from .type import get_all_descendant_classes
 from .retry.retry import Retry
 from .retry.retry_response import RetryResponse
 from .categorizer import categorizer
-from .mutator import mutate
+from .mutator import *
 from .undefined import undefined
 from .cli import cli
 from .generic_json_encoder import GenericJSONEncoder
+from .key_wrapper import KeyWrapper

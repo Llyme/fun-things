@@ -1,4 +1,9 @@
 from typing import Callable, Dict, List, Set, Union
+from .affix import Affix
+from .postfix import Postfix
+from .prefix import Prefix
+from ..key_wrapper import KeyWrapper
+import bisect
 
 
 class Mutator:
@@ -8,8 +13,8 @@ class Mutator:
         names: List[str],
         wrapped: Set[str],
         replacers: Dict[str, Callable],
-        prefixes: Dict[str, List[Callable]],
-        postfixes: Dict[str, List[Callable]],
+        prefixes: Dict[str, List[Affix]],
+        postfixes: Dict[str, List[Affix]],
     ):
         self.__obj = obj
         self.__names = names
@@ -27,41 +32,89 @@ class Mutator:
         raw = getattr(self.__obj, name)
 
         def wrapper(*args, **kwargs):
+            prefix_payload = Prefix(
+                args=list(args),
+                kwargs=kwargs,
+                proceed=True,
+            )
+
             if name in self.__prefixes:
                 for hook in self.__prefixes[name]:
-                    if hook(*args, **kwargs) == False:
-                        return None
+                    hook.fn(prefix_payload)
+
+            if not prefix_payload.proceed:
+                return
 
             value = None
 
             if name in self.__replacers:
-                value = self.__replacers[name](*args, **kwargs)
+                value = self.__replacers[name](
+                    *prefix_payload.args,
+                    **prefix_payload.kwargs,
+                )
             else:
-                value = raw(*args, **kwargs)
+                value = raw(
+                    *prefix_payload.args,
+                    **prefix_payload.kwargs,
+                )
+
+            postfix_payload = Postfix(
+                args=prefix_payload.args,
+                kwargs=prefix_payload.kwargs,
+                value=value,
+            )
 
             if name in self.__postfixes:
                 for hook in self.__postfixes[name]:
-                    hook(value, args, kwargs)
+                    hook.fn(postfix_payload)
 
             return value
 
         setattr(self.__obj, name, wrapper)
 
-    def prefix(self, hook: Callable):
+    def prefix(
+        self,
+        fn: Callable[[Prefix], None],
+        priority: int = 0,
+    ):
         for name in self.__names:
             if name not in self.__prefixes:
                 self.__prefixes[name] = []
 
-            self.__prefixes[name].append(hook)
+            bisect.insort_right(
+                KeyWrapper(
+                    items=self.__prefixes[name],
+                    key_selector=lambda item: item.priority,
+                    value_selector=lambda _: Affix(
+                        priority=priority,
+                        fn=fn,
+                    ),
+                ),  # type: ignore
+                priority,
+            )
 
         return self
 
-    def postfix(self, hook: Callable):
+    def postfix(
+        self,
+        fn: Callable[[Postfix], None],
+        priority: int = 0,
+    ):
         for name in self.__names:
             if name not in self.__postfixes:
                 self.__postfixes[name] = []
 
-            self.__postfixes[name].append(hook)
+            bisect.insort_right(
+                KeyWrapper(
+                    items=self.__postfixes[name],
+                    key_selector=lambda item: item.priority,
+                    value_selector=lambda _: Affix(
+                        priority=priority,
+                        fn=fn,
+                    ),
+                ),  # type: ignore
+                priority,
+            )
 
         return self
 
@@ -81,21 +134,37 @@ class Mutator:
 
         return self
 
-    def remove_postfix(self, callable: Callable):
+    def remove_postfix(self, fn: Callable):
+        """
+        Removes all occurrences of the given function.
+        """
         for name in self.__names:
             if name not in self.__postfixes:
                 continue
 
-            self.__postfixes[name].remove(callable)
+            self.__postfixes[name] = list(
+                filter(
+                    lambda affix: affix.fn == fn,
+                    self.__postfixes[name],
+                )
+            )
 
         return self
 
-    def remove_prefix(self, callable: Callable):
+    def remove_prefix(self, fn: Callable):
+        """
+        Removes all occurrences of the given function.
+        """
         for name in self.__names:
             if name not in self.__prefixes:
                 continue
 
-            self.__prefixes[name].remove(callable)
+            self.__prefixes[name] = list(
+                filter(
+                    lambda affix: affix.fn == fn,
+                    self.__prefixes[name],
+                )
+            )
 
         return self
 

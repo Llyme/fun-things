@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from .payload import Payload
 
 
+@dataclass
 class Prefix(Payload):
     proceed: bool = True
     """
