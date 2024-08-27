@@ -43,7 +43,7 @@ class Mutator:
                     hook.fn(prefix_payload)
 
             if not prefix_payload.proceed:
-                return
+                return prefix_payload.return_value
 
             value = None
 
@@ -61,7 +61,7 @@ class Mutator:
             postfix_payload = Postfix(
                 args=prefix_payload.args,
                 kwargs=prefix_payload.kwargs,
-                value=value,
+                return_value=value,
             )
 
             if name in self.__postfixes:

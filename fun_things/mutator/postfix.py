@@ -5,4 +5,4 @@ from .payload import Payload
 
 @dataclass
 class Postfix(Payload):
-    value: Any
+    return_value: Any
