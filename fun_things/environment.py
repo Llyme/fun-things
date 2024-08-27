@@ -3,11 +3,12 @@ import sys
 from typing import Any, Callable, Iterable, List, Optional, TypeVar
 from .undefined import undefined
 from . import parse
+from .not_chalk import NotChalk
 
 try:
     from simple_chalk import chalk  # type: ignore
 except:
-    chalk = lambda v: v
+    chalk = NotChalk()
 
 """
 Generic undefined data type.
