@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Callable, Optional
-from pydantic import BaseModel  # type: ignore
+from typing import Callable, Dict, Optional
+from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 from .mongo_annotation_writer import MongoAnnotationWriter
 from .mongo_annotation_field import MongoAnnotationField
-from pymongo.collection import Collection  # type: ignore
+from pymongo.collection import Collection
 
 
 def ignore_null(payload: MongoAnnotationField):
@@ -73,18 +74,11 @@ class MongoAnnotation:
     ] = default_update_writer
 
     @classmethod
-    def __get_annotation(cls, key, annotations):
-        if key not in annotations:
+    def __get_annotation(cls, key, infos: Dict[str, FieldInfo]):
+        if key not in infos:
             return cls
 
-        metadata = annotations[key].__dict__
-
-        if "__metadata__" not in metadata:
-            return cls
-
-        metadata = metadata["__metadata__"]
-
-        for annotation in metadata:
+        for annotation in infos[key].metadata:
             if isinstance(annotation, MongoAnnotation):
                 return annotation
 
@@ -98,12 +92,12 @@ class MongoAnnotation:
         **dump_kwargs,
     ):
         dump = model.model_dump(*dump_args, **dump_kwargs)
-        annotations = model.__class__.__dict__["__annotations__"]
+        infos = model.model_fields
 
         for key, value in dump.items():
             annotation = cls.__get_annotation(
                 key,
-                annotations,
+                infos,
             )
 
             yield MongoAnnotationField(
