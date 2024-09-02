@@ -9,4 +9,5 @@ from .undefined import undefined
 from .cli import cli
 from .generic_json_encoder import GenericJSONEncoder
 from .key_wrapper import KeyWrapper
-from .asynchronous import as_asyncgen
+from .asynchronous import as_asyncgen, as_async, as_gen
+from .middleware import Middleware

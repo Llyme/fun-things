@@ -1,5 +1,17 @@
+import asyncio
 import inspect
-from typing import Any, Callable, Iterable
+from typing import (
+    Any,
+    AsyncGenerator,
+    Callable,
+    Generator,
+    Iterable,
+    Optional,
+    TypeVar,
+)
+
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
 
 
 def _subdivide_predicate(value):
@@ -45,3 +57,22 @@ async def as_async(value):
         value = await value
 
     return value
+
+
+def as_gen(
+    values: AsyncGenerator[T1, T2],
+    loop: Optional[asyncio.AbstractEventLoop] = None,
+) -> Generator[T1, T2, None]:
+    """
+    Converts an async generator to a non-async generator.
+    """
+    loop = loop or asyncio.get_event_loop()
+
+    while True:
+        try:
+            yield loop.run_until_complete(
+                values.__anext__(),
+            )
+
+        except StopAsyncIteration:
+            break
