@@ -1,6 +1,8 @@
+import logging
+from signal import SIGABRT
 from abc import ABC
 import asyncio
-from signal import SIGABRT, SIGCONT, SIGQUIT
+from signal import SIGABRT, SIGCONT, SIGTERM
 from typing import (
     Dict,
     Generic,
@@ -12,12 +14,15 @@ from typing import (
     final,
 )
 from fun_things import as_asyncgen, as_gen
+import fun_things.logger
 
 TParent = TypeVar("TParent", bound="Middleware")
 TChild = TypeVar("TChild", bound="Middleware")
 
 
 class Middleware(Generic[TParent], ABC):
+    logger = fun_things.logger.new("Middleware")
+
     PRIORITY: int = 0
     MIDDLEWARES: List[Type["Middleware"]] = []
     """
@@ -62,6 +67,10 @@ class Middleware(Generic[TParent], ABC):
         Called before the nested middlewares are called.
 
         Can be asynchronous.
+
+        Return `signal.SIGABRT` to stop this middleware.
+
+        Return `signal.SIGTERM` to stop the whole process.
         """
         pass
 
@@ -70,6 +79,10 @@ class Middleware(Generic[TParent], ABC):
         Called after the nested middlewares are called.
 
         Can be asynchronous.
+
+        Return `signal.SIGABRT` to stop this middleware.
+
+        Return `signal.SIGTERM` to stop the whole process.
         """
         pass
 
@@ -135,61 +148,62 @@ class Middleware(Generic[TParent], ABC):
         for middleware in self.MIDDLEWARES:
             self.__instantiate(middleware)
 
-        async for item in as_asyncgen(self.before_run()):
-            # print("BEFORE RUN", self.__class__, result)
+        self.logger.debug(
+            "{0} {1}".format(
+                "BeforeRun",
+                self.__class__.__name__,
+            )
+        )
 
+        async for item in as_asyncgen(self.before_run()):
             if item == SIGCONT:
                 continue
 
             if item == SIGABRT:
                 return
 
-            if item == SIGQUIT:
+            if item == SIGTERM:
                 if self.parent != None:
-                    yield SIGQUIT
+                    yield SIGTERM
 
                 return
-
-        # print("START", self.__class__)
 
         middlewares = sorted(
             self.__middleware_instances.values(),
             key=lambda middleware: middleware.PRIORITY,
             reverse=True,
         )
-        abort = False
 
         for middleware in middlewares:
             async for item in as_asyncgen(middleware.run_async()):
-                # print("MIDDLEWARE", middleware, result)
                 if item == SIGCONT:
                     continue
 
                 if item == SIGABRT:
-                    abort = True
-                    break
+                    return
 
-                if item == SIGQUIT:
-                    abort = True
-
+                if item == SIGTERM:
                     if self.parent != None:
-                        yield SIGQUIT
+                        yield SIGTERM
 
-                    break
+                    return
 
-            if abort:
-                break
+        self.logger.debug(
+            "{0} {1}".format(
+                "AfterRun",
+                self.__class__.__name__,
+            )
+        )
 
         async for item in as_asyncgen(self.after_run()):
-            # print("AFTER RUN", self.__class__, result)
             if item == SIGCONT:
                 continue
 
             if item == SIGABRT:
                 return
 
-            if item == SIGQUIT:
+            if item == SIGTERM:
                 if self.parent != None:
-                    yield SIGQUIT
+                    yield SIGTERM
 
                 return
