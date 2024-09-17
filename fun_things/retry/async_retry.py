@@ -1,31 +1,31 @@
 from dataclasses import dataclass
 from time import sleep
 import traceback
-from typing import Callable, Generic, TypeVar, Union, cast
+from typing import Awaitable, Callable, Generic, TypeVar, Union, cast
 from .retry_response import RetryResponse
 
 T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class Retry(Generic[T]):
+class AsyncRetry(Generic[T]):
     """
     Allows a callable to be called again if it throws an error.
     """
 
-    callable: Callable[..., T] = None  # type: ignore
-    error_handler: Callable[["Retry", Exception, int], bool] = None  # type: ignore
+    callable: Callable[..., Awaitable[T]] = None  # type: ignore
+    error_handler: Callable[["Retry", Exception, int], Awaitable[bool]] = None  # type: ignore
     """
     If the return value is `False`,
     it will stop retrying.
     """
-    retry_handler: Callable[["Retry", T, int], bool] = None  # type: ignore
+    retry_handler: Callable[["Retry", T, int], Awaitable[bool]] = None  # type: ignore
     """
     If return value is `True`,
     it will retry the `callable`.
     """
     retry_count: int = 3
-    intermission: Union[float, Callable[["Retry"], float]] = 0
+    intermission: Union[float, Callable[["AsyncRetry"], Awaitable[float]]] = 0
     """
     Sleep time between each retry.
     
@@ -33,10 +33,10 @@ class Retry(Generic[T]):
     """
     log: bool = True
 
-    def __call__(self, *args, **kwargs):
-        return self.run(*args, **kwargs)
+    async def __call__(self, *args, **kwargs):
+        return await self.run(*args, **kwargs)
 
-    def run(self, *args, **kwargs):
+    async def run(self, *args, **kwargs):
         max_attempts_count = self.retry_count + 1
 
         for i in range(1, max_attempts_count):
@@ -47,7 +47,7 @@ class Retry(Generic[T]):
                 intermission: float = 0
 
                 if isinstance(self.intermission, Callable):
-                    intermission = self.intermission(self)
+                    intermission = await self.intermission(self)
 
                 else:
                     intermission = self.intermission
@@ -56,10 +56,10 @@ class Retry(Generic[T]):
                     sleep(intermission)
 
             try:
-                result = self.callable(*args, **kwargs)
+                result = await self.callable(*args, **kwargs)
 
                 if self.retry_handler != None:
-                    if self.retry_handler(
+                    if await self.retry_handler(
                         self,
                         result,
                         i,
@@ -81,7 +81,7 @@ class Retry(Generic[T]):
                 ok = True
 
                 if self.error_handler != None:
-                    ok = self.error_handler(self, e, i)
+                    ok = await self.error_handler(self, e, i)
 
                 if not ok:
                     return RetryResponse(
