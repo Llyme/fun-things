@@ -13,3 +13,4 @@ from .key_wrapper import KeyWrapper
 from .asynchronous import as_asyncgen, as_async, as_gen
 from .middleware import Middleware
 from .url import re_escape_special_chars, re_escape_url
+from .ad_blocker_filter_parser import AdBlockerFilterParser, AdBlockerFilterData
