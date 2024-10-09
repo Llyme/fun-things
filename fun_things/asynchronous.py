@@ -69,7 +69,7 @@ def as_sync(
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> T1:
     if inspect.isawaitable(value):
-        loop = loop or asyncio.get_event_loop()
+        loop = loop or asyncio.new_event_loop()
 
         return loop.run_until_complete(value)
 
@@ -78,17 +78,17 @@ def as_sync(
 
 def as_gen(
     value: Union[
-        Generator[T1],
-        AsyncGenerator[T1],
+        Generator[T1, T2, Any],
+        AsyncGenerator[T1, T2],
         Awaitable[T1],
         T1,
     ],
     loop: Optional[asyncio.AbstractEventLoop] = None,
-) -> Generator[T1, Any, Any]:
+) -> Generator[T1, T2, Any]:
     """
     Converts a function into a `Generator`.
     """
-    loop = loop or asyncio.get_event_loop()
+    loop = loop or asyncio.new_event_loop()
 
     if inspect.isawaitable(value):
         value = loop.run_until_complete(value)
