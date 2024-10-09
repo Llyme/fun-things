@@ -4,10 +4,12 @@ from typing import (
     Any,
     AsyncGenerator,
     Callable,
+    Coroutine,
     Generator,
     Iterable,
     Optional,
     TypeVar,
+    Union,
 )
 
 T1 = TypeVar("T1")
@@ -52,9 +54,23 @@ async def as_asyncgen(
     yield value
 
 
-async def as_async(value):
+async def as_async(
+    value: Union[Coroutine[Any, Any, T1], T1],
+) -> T1:
     if inspect.isawaitable(value):
         value = await value
+
+    return value  # type: ignore
+
+
+def as_sync(
+    value: Union[Coroutine[Any, Any, T1], T1],
+    loop: Optional[asyncio.AbstractEventLoop] = None,
+) -> T1:
+    if inspect.isawaitable(value):
+        loop = loop or asyncio.get_event_loop()
+
+        return loop.run_until_complete(value)
 
     return value
 
