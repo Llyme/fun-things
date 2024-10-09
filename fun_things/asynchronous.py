@@ -3,6 +3,7 @@ import inspect
 from typing import (
     Any,
     AsyncGenerator,
+    Awaitable,
     Callable,
     Coroutine,
     Generator,
@@ -76,19 +77,34 @@ def as_sync(
 
 
 def as_gen(
-    values: AsyncGenerator[T1, T2],
+    value: Union[
+        Generator[T1],
+        AsyncGenerator[T1],
+        Awaitable[T1],
+        T1,
+    ],
     loop: Optional[asyncio.AbstractEventLoop] = None,
-) -> Generator[T1, T2, None]:
+) -> Generator[T1, Any, Any]:
     """
-    Converts an async generator to a non-async generator.
+    Converts a function into a `Generator`.
     """
     loop = loop or asyncio.get_event_loop()
 
-    while True:
-        try:
-            yield loop.run_until_complete(
-                values.__anext__(),
-            )
+    if inspect.isawaitable(value):
+        value = loop.run_until_complete(value)
 
-        except StopAsyncIteration:
-            break
+    if inspect.isgenerator(value):
+        for subvalue in value:
+            yield subvalue
+
+        return
+
+    if inspect.isasyncgen(value):
+        while True:
+            try:
+                yield loop.run_until_complete(value.__anext__())
+
+            except StopAsyncIteration:
+                return
+
+    yield value  # type: ignore
