@@ -1,26 +1,13 @@
-from enum import Enum
 from typing import List, Optional
 
-try:
-    from fastapi_healthz import (
-        HealthCheckAbstract,
-    )
-    from fastapi_healthz.models import HealthCheckStatusEnum
-    from redis import Redis
-    from redis.retry import Retry
-    from redis.exceptions import TimeoutError, ConnectionError
-    from redis.backoff import ExponentialBackoff
-
-    _ok = True
-except:
-
-    class HealthCheckAbstract:
-        pass
-
-    class HealthCheckStatusEnum(Enum):
-        pass
-
-    _ok = False
+from fastapi_healthz import (
+    HealthCheckAbstract,
+)
+from fastapi_healthz.models import HealthCheckStatusEnum
+from redis import Redis
+from redis.retry import Retry
+from redis.exceptions import TimeoutError, ConnectionError
+from redis.backoff import ExponentialBackoff
 
 
 class HealthCheckRedis2(HealthCheckAbstract):
@@ -31,15 +18,14 @@ class HealthCheckRedis2(HealthCheckAbstract):
         password: Optional[str] = None,
         service: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        **kwargs,
     ):
-        if not _ok:
-            raise ImportError("`fastapi-healthz` and `redis` is required!")
-
         super().__init__(service, tags)
 
         self.__host = host
         self.__port = port
         self.__password = password
+        self.__kwargs = kwargs
 
     @property
     def service(self) -> str:
@@ -55,13 +41,7 @@ class HealthCheckRedis2(HealthCheckAbstract):
                 host=self.__host,
                 port=self.__port,
                 password=self.__password,
-                retry=Retry(ExponentialBackoff(cap=60, base=1), 25),
-                retry_on_error=[
-                    ConnectionError,
-                    TimeoutError,
-                    ConnectionResetError,
-                ],
-                health_check_interval=60,
+                **self.__kwargs,
             )
 
             ok = redis.ping()
