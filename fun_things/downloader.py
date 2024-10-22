@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from time import perf_counter
-from typing import List
+from typing import List, Optional
 import requests
 
 
@@ -9,7 +9,7 @@ class Chunk:
     value: List[bytes]
     b: int
     speed_b: float
-    destination: str
+    destination: Optional[str]
     cancel: bool = False
     """
     Set to `false` to stop downloading.
@@ -32,7 +32,10 @@ class Chunk:
         return self.speed_kb / 1024
 
 
-def download(url: str, destination: str):
+def download(
+    url: str,
+    destination: Optional[str] = None,
+):
     with requests.get(
         url,
         stream=True,
@@ -42,22 +45,27 @@ def download(url: str, destination: str):
 
         r.raise_for_status()
 
-        with open(destination, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                t2 = perf_counter()
-                b += len(chunk)
-                speed_b = b // (t2 - t1)
+        f = open(destination, "wb") if destination else None
 
+        for chunk in r.iter_content(chunk_size=8192):
+            t2 = perf_counter()
+            b += len(chunk)
+            speed_b = b // (t2 - t1)
+
+            if f != None:
                 f.write(chunk)
 
-                response = Chunk(
-                    b=b,
-                    speed_b=speed_b,
-                    value=chunk,
-                    destination=destination,
-                )
+            response = Chunk(
+                b=b,
+                speed_b=speed_b,
+                value=chunk,
+                destination=destination,
+            )
 
-                yield response
+            yield response
 
-                if response.cancel:
-                    break
+            if response.cancel:
+                break
+
+        if f != None:
+            f.close()
