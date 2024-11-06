@@ -56,7 +56,8 @@ class Categorizer(Generic[T]):
                 if keyword not in result:
                     result[keyword] = []
 
-                result[keyword].append(item)
+                if item not in result[keyword]:
+                    result[keyword].append(item)
 
         if not any(result):
             return "", None
@@ -88,6 +89,9 @@ class Categorizer(Generic[T]):
             yield keyword, sub_items
 
             for item in sub_items:
+                if item not in items:
+                    continue
+
                 items.remove(item)
 
         if len(items) > 0:
