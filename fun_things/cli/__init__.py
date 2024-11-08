@@ -1,17 +1,19 @@
 import argparse
 from .freeze import Freeze
+from .install import Install
 
 
 def cli():
     parser = argparse.ArgumentParser(
         description="Pub/Sub consumer common.",
     )
-
-    Freeze().run(
-        parser.add_subparsers(
-            dest="command",
-        )
+    subparser = parser.add_subparsers(
+        dest="command",
     )
+
+    Freeze().run(subparser)
+
+    Install().run(subparser)
 
     args = parser.parse_args()
 
