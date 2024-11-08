@@ -12,11 +12,9 @@ except:
 
 
 class Freeze:
-    RX_BITBUCKET_EDITABLE = (
-        r"^-e git\+https:\/\/(?:(.+)@)?bitbucket\.org\/(.+)\/(.+)\.git@(.+)#egg"
-    )
+    RX_BITBUCKET_EDITABLE = r"^-e git\+https:\/\/(?:(.+)@)?bitbucket\.org\/(.+)\/(.+?)(?:\.git)?@(.+)#egg=.+$"
     RX_BITBUCKET = (
-        r"^(.+)\s@\sgit\+https:\/\/bitbucket\.org\/(.+)\/(.+)\.git(?:@(.+))?$"
+        r"^(.+)\s@\sgit\+https:\/\/bitbucket\.org\/(.+)\/(.+?)(?:\.git)?(?:@(.+))?$"
     )
     IGNORES = [
         "pkg_resources==0.0.0",  # This can't be installed.
