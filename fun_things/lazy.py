@@ -1,6 +1,7 @@
-from typing import Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 T = TypeVar("T")
+TValue = TypeVar("TValue")
 
 
 class lazy(Generic[T]):
@@ -61,3 +62,24 @@ class lazy(Generic[T]):
         """
         self.__exists = False
         self.__instance = None  # type: ignore
+
+    @staticmethod
+    def fn(fn: Callable[..., TValue]) -> Callable[..., TValue]:
+        """
+        A static method that transforms a given callable into a memoized version.
+
+        The returned callable caches the result of the first invocation and returns
+        the cached result on subsequent calls, regardless of the input arguments.
+
+        :param fn: The original function to be memoized.
+        :return: A memoized version of the original function.
+        """
+        _value = []
+
+        def wrapper(*args, **kwargs) -> Any:
+            if not _value:
+                _value.append(fn(*args, **kwargs))
+
+            return _value[0]
+
+        return wrapper
