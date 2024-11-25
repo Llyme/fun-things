@@ -1,9 +1,19 @@
 from . import SingletonFactory
-from redis import Redis
+
+try:
+    from redis import Redis
+
+    _exists = True
+
+except:
+    _exists = False
 
 
-class RedisSF(SingletonFactory[Redis]):
+class RedisSF(SingletonFactory["Redis"]):
     def _instantiate(self):
+        if not _exists:
+            raise ImportError("You don't have `redis` installed!")
+
         redis = Redis(
             *self.args,
             **self.kwargs,

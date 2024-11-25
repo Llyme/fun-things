@@ -1,9 +1,19 @@
 from . import SingletonFactory
-from pymongo import MongoClient
+
+try:
+    from pymongo import MongoClient
+
+    _exists = True
+
+except:
+    _exists = False
 
 
-class MongoSF(SingletonFactory[MongoClient]):
+class MongoSF(SingletonFactory["MongoClient"]):
     def _instantiate(self):
+        if not _exists:
+            raise ImportError("You don't have `pymongo` installed!")
+
         mongo = MongoClient(
             *self.args,
             **self.kwargs,
