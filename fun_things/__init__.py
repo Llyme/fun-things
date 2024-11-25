@@ -15,3 +15,4 @@ from .middleware import Middleware
 from .url import re_escape_special_chars, re_escape_url
 from .ad_blocker_filter_parser import AdBlockerFilterParser, AdBlockerFilterData
 from .generic import merge_dict
+from .singleton_factory import SingletonFactory
