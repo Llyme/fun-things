@@ -14,20 +14,12 @@ class RedisSF(SingletonFactory["Redis"]):
         if not _exists:
             raise ImportError("You don't have `redis` installed!")
 
-        redis = Redis(
+        return Redis(
             *self.args,
             **self.kwargs,
         )
 
-        print("Instantiated Redis.", redis)
-
-        return redis
-
     def _destroy(self):
-        redis = self.instance
-
-        redis.close()
-
-        print("Redis destroyed.", redis)
+        self.instance.close()
 
         return True

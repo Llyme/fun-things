@@ -14,20 +14,12 @@ class MongoSF(SingletonFactory["MongoClient"]):
         if not _exists:
             raise ImportError("You don't have `pymongo` installed!")
 
-        mongo = MongoClient(
+        return MongoClient(
             *self.args,
             **self.kwargs,
         )
 
-        print("Instantiated MongoDB.", mongo)
-
-        return mongo
-
     def _destroy(self):
-        mongo = self.instance
-
-        mongo.close()
-
-        print("MongoDB destroyed.", mongo)
+        self.instance.close()
 
         return True

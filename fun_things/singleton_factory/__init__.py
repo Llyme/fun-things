@@ -19,6 +19,8 @@ class SingletonFactory(Generic[T], ABC):
     __instantiated: bool = False
     __instance: T
 
+    log: bool = True
+
     @property
     def instance(self):
         """
@@ -59,6 +61,12 @@ class SingletonFactory(Generic[T], ABC):
         if not self.__instantiated:
             self.__instance = self._instantiate()
             self.__instantiated = True
+
+            if self.log:
+                print(
+                    f"Instantiated '{self.__class__.__name__}'.",
+                    self.__instance,
+                )
 
         return self.__instance
 
@@ -104,6 +112,12 @@ class SingletonFactory(Generic[T], ABC):
 
         if ok:
             self.__instantiated = False
+
+            if self.log:
+                print(
+                    f"Destroyed '{self.__class__.__name__}'.",
+                    self.__instance,
+                )
 
         return ok
 

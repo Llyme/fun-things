@@ -14,20 +14,12 @@ class ElasticsearchSF(SingletonFactory["Elasticsearch"]):
         if not _exists:
             raise ImportError("You don't have `elasticsearch` installed!")
 
-        es = Elasticsearch(
+        return Elasticsearch(
             *self.args,
             **self.kwargs,
         )
 
-        print("Instantiated Elasticsearch.", es)
-
-        return es
-
     def _destroy(self):
-        es = self.instance
-
-        es.close()
-
-        print("Elasticsearch destroyed.", es)
+        self.instance.close()
 
         return True
