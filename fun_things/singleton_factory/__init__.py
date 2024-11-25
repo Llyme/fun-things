@@ -1,5 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Generic, List, TypeVar, final
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    TypeVar,
+    final,
+)
 
 T = TypeVar("T")
 
@@ -19,6 +29,9 @@ class SingletonFactory(Generic[T], ABC):
     __instantiated: bool = False
     __instance: T
 
+    __kwargs: Optional[dict] = None
+    __kwargs_fn: Optional[Callable[[], dict]] = None
+
     log: bool = True
 
     @property
@@ -35,7 +48,13 @@ class SingletonFactory(Generic[T], ABC):
         return self()
 
     @property
-    def kwargs(self):
+    def kwargs(self) -> dict:
+        if self.__kwargs == None:
+            if self.__kwargs_fn == None:
+                raise Exception('"kwargs" is not available!')
+
+            self.__kwargs = self.__kwargs_fn()
+
         return self.__kwargs
 
     @property
@@ -120,6 +139,27 @@ class SingletonFactory(Generic[T], ABC):
                 )
 
         return ok
+
+    @final
+    @classmethod
+    def new(cls, fn: Callable[[], Dict[str, Any]]):
+        """
+        Creates a new instance of the Singleton class
+        using a callable function as the configuration provider.
+
+        The callable is expected to return a dictionary
+        containing the configuration to be passed to the constructor.
+
+        :param fn: A callable returning a dictionary
+        :type fn: Callable[[], Dict[str, Any]]
+        :return: The new instance of the Singleton class
+        :rtype: T
+        """
+        singleton = cls()
+        singleton.__kwargs = None
+        singleton.__kwargs_fn = fn
+
+        return singleton
 
     @final
     @classmethod
