@@ -96,7 +96,11 @@ class Middleware(Generic[TParent], ABC):
         annotations = self.__class__.__annotations__
 
         for key, type in annotations.items():
-            if not issubclass(type, Middleware):
+            try:
+                if not issubclass(type, Middleware):
+                    continue
+
+            except:
                 continue
 
             setattr(self, key, self.__instantiate(type))
