@@ -1,19 +1,16 @@
-import logging
 from signal import SIGABRT
 from abc import ABC
-import asyncio
 from signal import SIGABRT, SIGCONT, SIGTERM
 from typing import (
     Dict,
     Generic,
     List,
-    Optional,
     Type,
     TypeVar,
     Union,
     final,
 )
-from fun_things import as_asyncgen, as_gen
+from fun_things import as_gen
 import fun_things.logger
 
 TParent = TypeVar("TParent", bound="Middleware")
@@ -66,8 +63,6 @@ class Middleware(Generic[TParent], ABC):
         """
         Called before the nested middlewares are called.
 
-        Can be asynchronous.
-
         Return `signal.SIGABRT` to stop this middleware.
 
         Return `signal.SIGTERM` to stop the whole process.
@@ -77,8 +72,6 @@ class Middleware(Generic[TParent], ABC):
     def after_run(self):
         """
         Called after the nested middlewares are called.
-
-        Can be asynchronous.
 
         Return `signal.SIGABRT` to stop this middleware.
 
@@ -109,30 +102,11 @@ class Middleware(Generic[TParent], ABC):
             setattr(self, key, self.__instantiate(type))
 
     @final
-    def run_all(
-        self,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-    ):
-        return [*self.run(loop)]
+    def run_all(self):
+        return [*self.run()]
 
     @final
-    def run(
-        self,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-    ):
-        return as_gen(self.run_async(), loop)
-
-    @final
-    async def run_all_async(self):
-        results = []
-
-        async for result in self.run_async():
-            results.append(result)
-
-        return results
-
-    @final
-    async def run_async(self):
+    def run(self):
         if self.parent == None:
             self.__all_middleware_instances = {
                 self.__class__: self,
@@ -155,7 +129,7 @@ class Middleware(Generic[TParent], ABC):
             )
         )
 
-        async for item in as_asyncgen(self.before_run()):
+        for item in as_gen(self.before_run()):
             if item == SIGCONT:
                 continue
 
@@ -175,7 +149,7 @@ class Middleware(Generic[TParent], ABC):
         )
 
         for middleware in middlewares:
-            async for item in as_asyncgen(middleware.run_async()):
+            for item in middleware.run():
                 if item == SIGCONT:
                     continue
 
@@ -195,7 +169,7 @@ class Middleware(Generic[TParent], ABC):
             )
         )
 
-        async for item in as_asyncgen(self.after_run()):
+        for item in as_gen(self.after_run()):
             if item == SIGCONT:
                 continue
 

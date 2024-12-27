@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fun-things"
-version = "0.45.4"
+version = "0.46.0"
 description = ""
 authors = ["MisterNyan <michael.edmund.wong@gmail.com>"]
 readme = "README.md"
