@@ -274,14 +274,16 @@ def env(
     if len(keys) == 0:
         raise Exception("At least 1 key must be provided!")
 
-    mentioned_keys[keys[0]] = default
-
     for key in keys:
         if key in os.environ:
+            mentioned_keys[key] = default
+
             if cast == bool:
                 return parse.bool(os.environ[key])  # type: ignore
 
             return cast(os.environ[key])
+
+    mentioned_keys[keys[0]] = default
 
     if default == undefined:
         text = "', '".join(keys)
