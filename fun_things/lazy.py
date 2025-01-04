@@ -1,7 +1,7 @@
 from typing import Any, Callable, Generic, TypeVar
 
 T = TypeVar("T")
-TValue = TypeVar("TValue")
+TValue = TypeVar("TValue", bound=Callable)
 
 
 class lazy(Generic[T]):
@@ -64,7 +64,7 @@ class lazy(Generic[T]):
         self.__instance = None  # type: ignore
 
     @staticmethod
-    def fn(fn: Callable[..., TValue]) -> Callable[..., TValue]:
+    def fn(fn: TValue) -> TValue:
         """
         A static method that transforms a given callable into a memoized version.
 
@@ -82,4 +82,4 @@ class lazy(Generic[T]):
 
             return _value[0]
 
-        return wrapper
+        return wrapper  # type: ignore
