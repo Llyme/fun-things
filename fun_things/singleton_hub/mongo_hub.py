@@ -8,6 +8,7 @@ class MongoHubMeta(EnvironmentHubMeta[MongoClient]):
     _formats = EnvironmentHubMeta._bake_basic_uri_formats(
         "MONGO",
         "MONGO_DB",
+        "MONGODB",
     )
     _kwargs: dict = {}
 

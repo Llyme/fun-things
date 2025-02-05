@@ -1,4 +1,5 @@
 import os
+import re
 from elasticsearch import Elasticsearch
 
 from .environment_hub import EnvironmentHubMeta
@@ -13,7 +14,13 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
 
     def _value_selector(cls, name: str):
         return Elasticsearch(
-            os.environ.get(name) or "",
+            [
+                clean_uri
+                for uri in re.compile(r",|\n").split(
+                    os.environ.get(name) or "",
+                )
+                if (clean_uri := uri.strip())
+            ],
             **cls._kwargs,
         )
 
