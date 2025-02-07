@@ -11,9 +11,10 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
         "ELASTICSEARCH",
     )
     _kwargs: dict = {}
+    _log: bool = True
 
     def _value_selector(cls, name: str):
-        return Elasticsearch(
+        client = Elasticsearch(
             [
                 clean_uri
                 for uri in re.compile(r",|\n").split(
@@ -23,6 +24,21 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
             ],
             **cls._kwargs,
         )
+
+        if cls._log:
+            print(f"Elasticsearch `{name}` connected.")
+
+        return client
+
+    def _on_clear(
+        cls,
+        key: str,
+        value: Elasticsearch,
+    ) -> None:
+        value.close()
+
+        if cls._log:
+            print(f"Elasticsearch `{key}` closed.")
 
 
 class ElasticsearchHub(metaclass=ElasticsearchHubMeta):

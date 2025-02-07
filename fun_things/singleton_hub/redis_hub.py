@@ -9,12 +9,28 @@ class RedisHubMeta(EnvironmentHubMeta[Redis]):
         "REDIS",
     )
     _kwargs: dict = {}
+    _log: bool = True
 
     def _value_selector(cls, name: str):
-        return Redis.from_url(
+        client = Redis.from_url(
             os.environ.get(name) or "",
             **cls._kwargs,
         )
+
+        if cls._log:
+            print(f"Redis `{name}` connected.")
+
+        return client
+
+    def _on_clear(
+        cls,
+        key: str,
+        value: Redis,
+    ) -> None:
+        value.close()
+
+        if cls._log:
+            print(f"Redis `{key}` closed.")
 
 
 class RedisHub(metaclass=RedisHubMeta):

@@ -9,6 +9,8 @@ T = TypeVar("T")
 
 
 class EnvironmentHubMeta(SingletonHubMeta[T], ABC):
+    _error_on_missing: bool = True
+
     @staticmethod
     def _bake_basic_uri_formats(
         *keywords: str,
@@ -38,26 +40,7 @@ class EnvironmentHubMeta(SingletonHubMeta[T], ABC):
 
         :param keywords: A collection of keywords used to generate
             the URI formats.
-        :param formats: A collection of URI formats. The default formats
-            are:
-            "{keyword}",
-            "{keyword}_URI",
-            "{keyword}_URL",
-            "{keyword}_CONNECTION_URI",
-            "{keyword}_CONNECTION_URL",
-            "{keyword}_CONNECTION_STRING",
-            "{{name}}_{keyword}",
-            "{{name}}_{keyword}_URI",
-            "{{name}}_{keyword}_URL",
-            "{{name}}_{keyword}_CONNECTION_URI",
-            "{{name}}_{keyword}_CONNECTION_URL",
-            "{{name}}_{keyword}_CONNECTION_STRING",
-            "{keyword}_{{name}}",
-            "{keyword}_URI_{{name}}",
-            "{keyword}_URL_{{name}}",
-            "{keyword}_CONNECTION_URI_{{name}}",
-            "{keyword}_CONNECTION_URL_{{name}}",
-            "{keyword}_CONNECTION_STRING_{{name}}".
+        :param formats: A collection of URI formats.
         :return: A list of generated URI formats.
         """
         return [
@@ -109,16 +92,17 @@ class EnvironmentHubMeta(SingletonHubMeta[T], ABC):
 
                 continue
 
-            try:
-                field_name = format.format(name=name).upper()
+            field_name = format.format(name=name).upper()
 
-                if empty:
-                    continue
-
-                if field_name in os.environ:
-                    return field_name
-
-            except KeyError:
+            if empty:
                 continue
+
+            if field_name in os.environ:
+                return field_name
+
+        if cls._error_on_missing:
+            raise KeyError(
+                f"No environment variable found for `{name}`.",
+            )
 
         return name.upper()

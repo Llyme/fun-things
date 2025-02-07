@@ -11,12 +11,28 @@ class MongoHubMeta(EnvironmentHubMeta[MongoClient]):
         "MONGODB",
     )
     _kwargs: dict = {}
+    _log: bool = True
 
     def _value_selector(cls, name: str):
-        return MongoClient(
+        client = MongoClient(
             os.environ.get(name),
             **cls._kwargs,
         )
+
+        if cls._log:
+            print(f"MongoDB `{name}` connected.")
+
+        return client
+
+    def _on_clear(
+        cls,
+        key: str,
+        value: MongoClient,
+    ) -> None:
+        value.close()
+
+        if cls._log:
+            print(f"MongoDB `{key}` closed.")
 
 
 class MongoHub(metaclass=MongoHubMeta):
