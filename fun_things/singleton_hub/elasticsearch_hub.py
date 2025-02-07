@@ -9,6 +9,25 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
     _formats = EnvironmentHubMeta._bake_basic_uri_formats(
         "ES",
         "ELASTICSEARCH",
+        formats=[
+            *EnvironmentHubMeta._DEFAULT_FORMATS,
+            "{keyword}_URIS",
+            "{keyword}_URLS",
+            "{keyword}_CONNECTION_URIS",
+            "{keyword}_CONNECTION_URLS",
+            "{keyword}_CONNECTION_STRINGS",
+            "{{name}}_{keyword}_URIS",
+            "{{name}}_{keyword}_URLS",
+            "{{name}}_{keyword}_CONNECTION_URIS",
+            "{{name}}_{keyword}_CONNECTION_URLS",
+            "{{name}}_{keyword}_CONNECTION_STRINGS",
+            "{keyword}_{{name}}",
+            "{keyword}_URIS_{{name}}",
+            "{keyword}_URLS_{{name}}",
+            "{keyword}_CONNECTION_URIS_{{name}}",
+            "{keyword}_CONNECTION_URLS_{{name}}",
+            "{keyword}_CONNECTION_STRINGS_{{name}}",
+        ],
     )
     _kwargs: dict = {}
     _log: bool = True

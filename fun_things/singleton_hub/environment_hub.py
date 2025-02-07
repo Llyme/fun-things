@@ -9,31 +9,32 @@ T = TypeVar("T")
 
 
 class EnvironmentHubMeta(SingletonHubMeta[T], ABC):
+    _DEFAULT_FORMATS = [
+        "{keyword}",
+        "{keyword}_URI",
+        "{keyword}_URL",
+        "{keyword}_CONNECTION_URI",
+        "{keyword}_CONNECTION_URL",
+        "{keyword}_CONNECTION_STRING",
+        "{{name}}_{keyword}",
+        "{{name}}_{keyword}_URI",
+        "{{name}}_{keyword}_URL",
+        "{{name}}_{keyword}_CONNECTION_URI",
+        "{{name}}_{keyword}_CONNECTION_URL",
+        "{{name}}_{keyword}_CONNECTION_STRING",
+        "{keyword}_{{name}}",
+        "{keyword}_URI_{{name}}",
+        "{keyword}_URL_{{name}}",
+        "{keyword}_CONNECTION_URI_{{name}}",
+        "{keyword}_CONNECTION_URL_{{name}}",
+        "{keyword}_CONNECTION_STRING_{{name}}",
+    ]
     _error_on_missing: bool = True
 
     @staticmethod
     def _bake_basic_uri_formats(
         *keywords: str,
-        formats: Iterable[str] = [
-            "{keyword}",
-            "{keyword}_URI",
-            "{keyword}_URL",
-            "{keyword}_CONNECTION_URI",
-            "{keyword}_CONNECTION_URL",
-            "{keyword}_CONNECTION_STRING",
-            "{{name}}_{keyword}",
-            "{{name}}_{keyword}_URI",
-            "{{name}}_{keyword}_URL",
-            "{{name}}_{keyword}_CONNECTION_URI",
-            "{{name}}_{keyword}_CONNECTION_URL",
-            "{{name}}_{keyword}_CONNECTION_STRING",
-            "{keyword}_{{name}}",
-            "{keyword}_URI_{{name}}",
-            "{keyword}_URL_{{name}}",
-            "{keyword}_CONNECTION_URI_{{name}}",
-            "{keyword}_CONNECTION_URL_{{name}}",
-            "{keyword}_CONNECTION_STRING_{{name}}",
-        ],
+        formats: Iterable[str] = _DEFAULT_FORMATS,
     ):
         """
         Return a list of basic URI formats from given keywords.
