@@ -1,5 +1,6 @@
 import os
 import re
+
 from elasticsearch import Elasticsearch
 
 from .environment_hub import EnvironmentHubMeta
@@ -45,7 +46,7 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
         )
 
         if cls._log:
-            print(f"Elasticsearch `{name}` connected.")
+            print(f"Elasticsearch `{name}` instantiated.")
 
         return client
 

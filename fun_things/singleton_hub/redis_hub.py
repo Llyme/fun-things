@@ -1,4 +1,5 @@
 import os
+
 from redis import Redis
 
 from .environment_hub import EnvironmentHubMeta
@@ -18,7 +19,7 @@ class RedisHubMeta(EnvironmentHubMeta[Redis]):
         )
 
         if cls._log:
-            print(f"Redis `{name}` connected.")
+            print(f"Redis `{name}` instantiated.")
 
         return client
 

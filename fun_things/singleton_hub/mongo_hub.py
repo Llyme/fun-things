@@ -1,4 +1,5 @@
 import os
+
 from pymongo import MongoClient
 
 from .environment_hub import EnvironmentHubMeta
@@ -20,7 +21,7 @@ class MongoHubMeta(EnvironmentHubMeta[MongoClient]):
         )
 
         if cls._log:
-            print(f"MongoDB `{name}` connected.")
+            print(f"MongoDB `{name}` instantiated.")
 
         return client
 
