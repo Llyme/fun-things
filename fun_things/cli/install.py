@@ -18,7 +18,7 @@ class Install:
             re.I,
         )
 
-        if match == None:
+        if match is None:
             return
 
         return f"-e git+https://{match[2]}@{match[3]}@{match[4]}#egg={match[1]}"
@@ -33,7 +33,7 @@ class Install:
             re.I,
         )
 
-        if match == None:
+        if match is None:
             return
 
         return f"-e git+https://{match[2]}@{match[3]}#egg={match[1]}"

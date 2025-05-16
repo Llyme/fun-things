@@ -7,7 +7,7 @@ from .not_chalk import NotChalk
 
 try:
     from simple_chalk import chalk  # type: ignore
-except:
+except Exception:
     chalk = NotChalk()
 
 """
@@ -98,7 +98,7 @@ Set of environment keys mentioned in `env()`.
 def __caller_path():
     frame = sys._getframe()
 
-    while frame.f_back != None:
+    while frame.f_back is not None:
         frame = frame.f_back
 
     return os.path.dirname(frame.f_code.co_filename)
@@ -153,7 +153,7 @@ def pretty_print(
         )
     ]
 
-    if keys != None:
+    if keys is not None:
         fields = []
 
         for key in keys:
@@ -163,7 +163,7 @@ def pretty_print(
             elif key in mentioned_keys:
                 value = mentioned_keys[key]
 
-                if value == None:
+                if value is None:
                     value = ""
 
                 fields.append((key, str(value)))
@@ -278,7 +278,7 @@ def env(
         if key in os.environ:
             mentioned_keys[key] = default
 
-            if cast == bool:
+            if cast is bool:
                 return parse.bool(os.environ[key])  # type: ignore
 
             return cast(os.environ[key])
@@ -289,7 +289,7 @@ def env(
         text = "', '".join(keys)
         raise Exception(f"'{text}' is not in the environment!")
 
-    if write_to_env and default != None:
+    if write_to_env and default is not None:
         for key in keys:
             os.environ[key] = str(default)
 

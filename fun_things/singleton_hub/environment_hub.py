@@ -103,7 +103,7 @@ class EnvironmentHubMeta(SingletonHubMeta[T], ABC):
 
         if cls._error_on_missing:
             raise KeyError(
-                f"No environment variable found for `{name}`.",
+                f"{cls.__name__}: Environment variable not found for `{name}`.",
             )
 
         return name.upper()

@@ -5,7 +5,7 @@ try:
 
     _exists = True
 
-except:
+except Exception:
     _exists = False
 
 
@@ -14,7 +14,7 @@ class MongoSF(SingletonFactory["MongoClient"]):
         if not _exists:
             raise ImportError("You don't have `pymongo` installed!")
 
-        return MongoClient(
+        return MongoClient(  # type: ignore
             *self.args,
             **self.kwargs,
         )

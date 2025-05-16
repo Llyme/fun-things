@@ -31,7 +31,7 @@ class AdBlockerFilterData:
         :param case_insensitive: Whether to do a case insensitive search.
         :return: True if the URL should be blocked, False otherwise.
         """
-        if domain != None:
+        if domain is not None:
             if case_insensitive:
                 domain = domain.lower()
 
@@ -44,4 +44,4 @@ class AdBlockerFilterData:
         if case_insensitive:
             url = url.lower()
 
-        return self.value.search(url) != None
+        return self.value.search(url) is not None

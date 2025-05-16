@@ -1,7 +1,8 @@
+import traceback
 from dataclasses import dataclass
 from time import sleep
-import traceback
 from typing import Awaitable, Callable, Generic, TypeVar, Union, cast
+
 from .retry_response import RetryResponse
 
 T = TypeVar("T")
@@ -58,7 +59,7 @@ class AsyncRetry(Generic[T]):
             try:
                 result = await self.callable(*args, **kwargs)
 
-                if self.retry_handler != None:
+                if self.retry_handler is not None:
                     if await self.retry_handler(
                         self,
                         result,
@@ -80,7 +81,7 @@ class AsyncRetry(Generic[T]):
 
                 ok = True
 
-                if self.error_handler != None:
+                if self.error_handler is not None:
                     ok = await self.error_handler(self, e, i)
 
                 if not ok:

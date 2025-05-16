@@ -1,17 +1,18 @@
 # import unicodedata
 # import regex
 
-from .payload import Payload
 import pycountry
+
+from .payload import Payload
 
 try:
     import pycld2
-except:
+except Exception:
     pycld2 = None
 
 try:
     import langdetect
-except:
+except Exception:
     langdetect = None
 
 # RE_BAD_CHARS = regex.compile(r"\p{Cc}|\p{Cs}")
@@ -34,7 +35,7 @@ except:
 
 
 def _parse_pycld2(text: str):
-    if pycld2 == None:
+    if pycld2 is None:
         return
 
     try:
@@ -53,12 +54,12 @@ def _parse_pycld2(text: str):
                     source="pycld2",
                 )
 
-    except:
+    except Exception:
         pass
 
 
 def _parse_langdetect(text: str):
-    if langdetect == None:
+    if langdetect is None:
         return
 
     langs = langdetect.detect_langs(text)
@@ -68,7 +69,7 @@ def _parse_langdetect(text: str):
             alpha_2=lang.lang,
         )
 
-        if pycountry_lang == None:
+        if pycountry_lang is None:
             continue
 
         yield Payload(
@@ -83,7 +84,7 @@ def detect(text: str):
     """
     Requires `pycld2` or `langdetect`, or both.
     """
-    if text == None:
+    if text is None:
         return []
 
     # text = _remove_bad_chars(text)

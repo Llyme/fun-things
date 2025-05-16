@@ -5,7 +5,7 @@ from .not_chalk import NotChalk
 
 try:
     from simple_chalk import chalk  # type: ignore
-except:
+except Exception:
     chalk = NotChalk()
 
 

@@ -52,7 +52,7 @@ def download(
             b += len(chunk)
             speed_b = b // (t2 - t1)
 
-            if f != None:
+            if f is not None:
                 f.write(chunk)
 
             response = Chunk(
@@ -67,5 +67,5 @@ def download(
             if response.cancel:
                 break
 
-        if f != None:
+        if f is not None:
             f.close()

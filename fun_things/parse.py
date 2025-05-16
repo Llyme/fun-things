@@ -18,7 +18,7 @@ def bool(input):
     none,
     nil
     """
-    if input == None:
+    if input is None:
         return False
 
     if isinstance(input, str):

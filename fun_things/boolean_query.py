@@ -60,7 +60,7 @@ class BooleanQuery:
                     text,
                     flags,
                 )
-                != None
+                is not None
                 else self.__algebra.FALSE
             )
             for key, value in enumerate(self.__values)

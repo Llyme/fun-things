@@ -3,11 +3,12 @@ import re
 from argparse import _SubParsersAction
 from configparser import ConfigParser
 from typing import List, Optional
+
 from ..not_chalk import NotChalk
 
 try:
     from simple_chalk import chalk  # type: ignore
-except:
+except Exception:
     chalk = NotChalk()
 
 
@@ -25,7 +26,7 @@ class Freeze:
         line: str,
         message: Optional[str] = None,
     ):
-        if message == None:
+        if message is None:
             message = line
 
         print(message)
@@ -61,11 +62,11 @@ class Freeze:
     def __bitbucket_editable(self, line: str):
         match = re.match(self.RX_BITBUCKET_EDITABLE, line)
 
-        if match == None:
+        if match is None:
             return False
 
         access_token = match[1]
-        access_token = f"{access_token}@" if access_token != None else ""
+        access_token = f"{access_token}@" if access_token is not None else ""
         path = match[2]
         name = match[3]
         commit_hash = match[4]
@@ -81,7 +82,7 @@ class Freeze:
     def __bitbucket(self, line: str):
         match = re.match(self.RX_BITBUCKET, line)
 
-        if match == None:
+        if match is None:
             return False
 
         # name = match[1]

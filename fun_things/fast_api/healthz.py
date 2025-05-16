@@ -5,9 +5,6 @@ from fastapi_healthz import (
 )
 from fastapi_healthz.models import HealthCheckStatusEnum
 from redis import Redis
-from redis.retry import Retry
-from redis.exceptions import TimeoutError, ConnectionError
-from redis.backoff import ExponentialBackoff
 
 
 class HealthCheckRedis2(HealthCheckAbstract):
@@ -50,5 +47,5 @@ class HealthCheckRedis2(HealthCheckAbstract):
                 HealthCheckStatusEnum.HEALTHY if ok else HealthCheckStatusEnum.UNHEALTHY
             )
 
-        except:
+        except Exception:
             return HealthCheckStatusEnum.UNHEALTHY

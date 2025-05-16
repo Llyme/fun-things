@@ -7,10 +7,10 @@ RX_PROXY_URI = r"^(https?\:\/\/)(?:([^:@]+):([^@]+)@)?([^:@]+):([^:@]+)$"
 class ProxyURI(NamedTuple):
     """
     A named tuple representing a proxy URI with its components parsed.
-    
+
     This class parses a proxy URI string (like 'http://username:password@host:port')
     into its component parts and provides convenient access to those parts.
-    
+
     Attributes:
         uri (str): The original proxy URI string.
         protocol (str): The protocol part of the URI (e.g., 'http://').
@@ -20,6 +20,7 @@ class ProxyURI(NamedTuple):
         port (str): The port number as a string.
         server (str): The protocol, host, and port combined (without auth).
     """
+
     uri: str
     protocol: str
     username: str
@@ -32,15 +33,15 @@ class ProxyURI(NamedTuple):
     def new(uri: str):
         """
         Create a new ProxyURI instance by parsing a proxy URI string.
-        
+
         Args:
             uri (str): The proxy URI string to parse, in the format
                       'http(s)://[username:password@]host:port'
-        
+
         Returns:
             ProxyURI: A new ProxyURI instance with parsed components, or None if
                      the URI couldn't be parsed or is None.
-        
+
         Examples:
             >>> proxy = ProxyURI.new('http://user:pass@127.0.0.1:8080')
             >>> proxy.username
@@ -48,12 +49,12 @@ class ProxyURI(NamedTuple):
             >>> proxy.host
             '127.0.0.1'
         """
-        if uri == None:
+        if uri is None:
             return None
 
         match = re.search(RX_PROXY_URI, uri)
 
-        if match == None:
+        if match is None:
             return None
 
         protocol = match[1]
@@ -80,18 +81,18 @@ class ProxyURI(NamedTuple):
     ):
         """
         Create a dictionary representation of a proxy URI's components.
-        
+
         Args:
             uri (str): The proxy URI string to parse, in the format
                       'http(s)://[username:password@]host:port'
             remove_empty (bool, optional): If True, fields with None values will be
                                           removed from the resulting dictionary.
                                           Defaults to True.
-        
+
         Returns:
             dict: A dictionary containing the parsed components of the proxy URI,
                  or None if the URI couldn't be parsed or is None.
-        
+
         Examples:
             >>> proxy_dict = ProxyURI.new_dict('http://user:pass@127.0.0.1:8080')
             >>> proxy_dict['username']
@@ -101,7 +102,7 @@ class ProxyURI(NamedTuple):
         """
         proxy = ProxyURI.new(uri)
 
-        if proxy == None:
+        if proxy is None:
             return None
 
         result = proxy._asdict()
@@ -111,4 +112,4 @@ class ProxyURI(NamedTuple):
 
         items = result.items()
 
-        return {k: v for k, v in items if v != None}
+        return {k: v for k, v in items if v is not None}

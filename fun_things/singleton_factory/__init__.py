@@ -4,7 +4,6 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
     List,
     Optional,
     TypeVar,
@@ -49,8 +48,8 @@ class SingletonFactory(Generic[T], ABC):
 
     @property
     def kwargs(self) -> dict:
-        if self.__kwargs == None:
-            if self.__kwargs_fn == None:
+        if self.__kwargs is None:
+            if self.__kwargs_fn is None:
                 raise Exception('"kwargs" is not available!')
 
             self.__kwargs = self.__kwargs_fn()

@@ -3,7 +3,7 @@ from json import JSONEncoder
 
 try:
     from bson import ObjectId
-except:
+except Exception:
 
     class ObjectId:
         pass

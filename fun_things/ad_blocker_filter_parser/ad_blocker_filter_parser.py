@@ -1,15 +1,16 @@
 from io import TextIOWrapper
 from typing import List, Optional
+
 from .ad_blocker_filter_data import AdBlockerFilterData
 
 try:
     from abp.filters import parse_filterlist
-except:
+except Exception:
     parse_filterlist = None
 
 try:
     import re2 as re
-except:
+except Exception:
     import re
 
 DOMAIN_END = (
@@ -56,7 +57,7 @@ class AdBlockerFilterParser:
         :param f: A file object with a filter list.
         :type f: TextIOWrapper
         """
-        if parse_filterlist == None:
+        if parse_filterlist is None:
             raise ImportError("python-abp is not installed!")
 
         for line in parse_filterlist(f):

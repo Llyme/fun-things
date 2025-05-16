@@ -8,16 +8,16 @@ def re_escape_special_chars(
 ):
     """
     Decode and re-encode URL components to normalize escaped characters.
-    
+
     This function decodes URL-encoded special characters (like %20) and then
     re-encodes them in a consistent way. It's useful for normalizing URLs
     that may have been encoded multiple times or inconsistently.
-    
+
     Args:
         text (str): The URL component text to process.
         safe (str, optional): Characters that should not be percent-encoded.
                               Defaults to "/".
-    
+
     Returns:
         str: The normalized URL component with consistent escaping.
     """
@@ -38,19 +38,19 @@ def re_escape_special_chars(
 def re_escape_url(value: Union[str, ParseResult]):
     """
     Normalize and re-escape an entire URL.
-    
+
     This function takes a URL (either as a string or ParseResult) and normalizes
     the escaping of special characters in each component of the URL. It's useful
     for ensuring consistent URL encoding, especially when dealing with URLs that
     may have been encoded multiple times or inconsistently.
-    
+
     Args:
         value (Union[str, ParseResult]): The URL to normalize, either as a string
                                          or as a ParseResult object.
-    
+
     Returns:
         str: The normalized URL with consistent escaping across all components.
-    
+
     Note:
         Different URL components have different 'safe' characters that don't need
         escaping, which this function handles appropriately.
@@ -70,7 +70,7 @@ def re_escape_url(value: Union[str, ParseResult]):
 
         return urlunparse(url)
 
-    except:
+    except Exception:
         pass
 
     if isinstance(value, str):

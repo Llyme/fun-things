@@ -1,4 +1,3 @@
-from signal import SIGABRT
 from abc import ABC
 from signal import SIGABRT, SIGCONT, SIGTERM
 from typing import (
@@ -10,8 +9,9 @@ from typing import (
     Union,
     final,
 )
-from fun_things import as_gen
+
 import fun_things.logger
+from fun_things import as_gen
 
 TParent = TypeVar("TParent", bound="Middleware")
 TChild = TypeVar("TChild", bound="Middleware")
@@ -100,7 +100,7 @@ class Middleware(Generic[TParent], ABC):
                 if not issubclass(type, Middleware):
                     continue
 
-            except:
+            except Exception:
                 continue
 
             setattr(self, key, self.__instantiate(type))
@@ -111,7 +111,7 @@ class Middleware(Generic[TParent], ABC):
 
     @final
     def run(self):
-        if self.parent == None:
+        if self.parent is None:
             self.__all_middleware_instances = {
                 self.__class__: self,
             }
@@ -141,7 +141,7 @@ class Middleware(Generic[TParent], ABC):
                 return
 
             if item == SIGTERM:
-                if self.parent != None:
+                if self.parent is not None:
                     yield SIGTERM
 
                 return
@@ -161,7 +161,7 @@ class Middleware(Generic[TParent], ABC):
                     return
 
                 if item == SIGTERM:
-                    if self.parent != None:
+                    if self.parent is not None:
                         yield SIGTERM
 
                     return
@@ -181,7 +181,7 @@ class Middleware(Generic[TParent], ABC):
                 return
 
             if item == SIGTERM:
-                if self.parent != None:
+                if self.parent is not None:
                     yield SIGTERM
 
                 return

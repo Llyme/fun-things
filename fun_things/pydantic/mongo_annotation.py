@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional
+
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
-from .mongo_annotation_writer import MongoAnnotationWriter
-from .mongo_annotation_field import MongoAnnotationField
 from pymongo.collection import Collection
+
+from .mongo_annotation_field import MongoAnnotationField
+from .mongo_annotation_writer import MongoAnnotationWriter
 
 
 def ignore_null(payload: MongoAnnotationField):
-    return payload.value != None
+    return payload.value is not None
 
 
 def default_filter_writer(
@@ -120,7 +122,7 @@ class MongoAnnotation:
             *dump_args,
             **dump_kwargs,
         ):
-            if field.annotation.filter_condition != None:
+            if field.annotation.filter_condition is not None:
                 if not field.annotation.filter_condition(field):
                     continue
 
@@ -175,7 +177,7 @@ class MongoAnnotation:
             *dump_args,
             **dump_kwargs,
         ):
-            if field.annotation.update_condition != None:
+            if field.annotation.update_condition is not None:
                 if not field.annotation.update_condition(field):
                     continue
 

@@ -29,7 +29,7 @@ class Categorizer(Generic[T]):
             int(keyword)
 
             return 1
-        except:
+        except Exception:
             pass
 
         # The rest are prioritized.
@@ -83,7 +83,7 @@ class Categorizer(Generic[T]):
                 ignored_keywords,
             )
 
-            if sub_items == None:
+            if sub_items is None:
                 break
 
             yield keyword, sub_items
@@ -114,7 +114,7 @@ class Categorizer(Generic[T]):
                 others.append(sub_items[0])
                 continue
 
-            if keyword == None:
+            if keyword is None:
                 for item in sub_items:
                     others.append(item)
 
@@ -128,7 +128,7 @@ class Categorizer(Generic[T]):
             if len(value) == 1:
                 sub_keyword, value = next(iter(value.items()))
 
-                if sub_keyword != None:
+                if sub_keyword is not None:
                     keyword = f"{keyword}_{sub_keyword}"
 
             result[keyword] = value

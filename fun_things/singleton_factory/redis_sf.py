@@ -5,7 +5,7 @@ try:
 
     _exists = True
 
-except:
+except Exception:
     _exists = False
 
 
@@ -14,7 +14,7 @@ class RedisSF(SingletonFactory["Redis"]):
         if not _exists:
             raise ImportError("You don't have `redis` installed!")
 
-        return Redis(
+        return Redis(  # type: ignore
             *self.args,
             **self.kwargs,
         )
