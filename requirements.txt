@@ -1,3 +1,13 @@
-pyre2==0.3.6
+async-timeout==5.0.1
+certifi==2025.4.26
+dnspython==2.7.0
+elastic-transport==8.17.1
+elasticsearch==8.18.1
+pymongo==4.13.0
 python-abp==0.2.0
+python-dateutil==2.9.0.post0
+redis==6.1.0
 simple-chalk==0.1.0
+six==1.17.0
+typing_extensions==4.13.2
+urllib3==2.4.0

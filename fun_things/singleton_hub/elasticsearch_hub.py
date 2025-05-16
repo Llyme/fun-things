@@ -35,12 +35,15 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
 
     def _value_selector(cls, name: str):
         client = Elasticsearch(
-            [
-                clean_uri
-                for uri in re.compile(r",|\n").split(
-                    os.environ.get(name) or "",
+            hosts=[
+                f"{scheme}://{f'{username}:{password}@' if password else ''}{host}:{port}"
+                for scheme, username, password, host, port in (
+                    match.groups()
+                    for match in re.finditer(
+                        r"(https?):\/\/(?:([^\s@]+)?:([^\s@]+)@)?([^\s@]+):(\d+)",
+                        os.environ.get(name) or "",
+                    )
                 )
-                if (clean_uri := uri.strip())
             ],
             **cls._kwargs,
         )
