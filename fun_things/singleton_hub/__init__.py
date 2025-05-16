@@ -4,6 +4,53 @@ from typing import Dict, Generic, TypeVar, final
 T = TypeVar("T")
 
 
+class Catcher(Generic[T]):
+    """
+    A context manager for handling errors in singleton hub operations.
+
+    This class provides a context manager interface for handling errors that may
+    occur during singleton hub operations. It allows for automatic error handling,
+    optional clearing of values on error, and control over whether errors are
+    re-raised.
+
+    :param hub: The singleton hub instance
+    :param name: The name of the value being accessed
+    :param value: The value being accessed
+    :param clear_on_error: Whether to clear the value from cache on error
+    :param raise_error: Whether to re-raise the error after handling
+    """
+
+    def __init__(
+        self,
+        hub: "SingletonHubMeta[T]",
+        name: str,
+        value: T,
+        clear_on_error: bool,
+        raise_error: bool,
+    ):
+        self.hub = hub
+        self.name = name
+        self.value = value
+        self.clear_on_error = clear_on_error
+        self.raise_error = raise_error
+
+    def __enter__(self):
+        return self.value
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_value:
+            self.hub._on_error(
+                self.name,
+                self.value,
+                exc_value,
+            )
+
+            if self.clear_on_error:
+                self.hub.clear(self.name)
+
+            return not self.raise_error
+
+
 class SingletonHubMeta(ABC, type, Generic[T]):
     @property
     def __key_cache(cls) -> Dict[str, str]:
@@ -24,6 +71,14 @@ class SingletonHubMeta(ABC, type, Generic[T]):
 
     @abstractmethod
     def _value_selector(cls, name: str) -> T:
+        pass
+
+    def _on_error(
+        cls,
+        key: str,
+        value: T,
+        e: Exception,
+    ) -> None:
         pass
 
     def _on_clear(cls, key: str, value: T) -> None:
@@ -113,6 +168,34 @@ class SingletonHubMeta(ABC, type, Generic[T]):
         value = cls.__value_cache[key] = cls._value_selector(key)
 
         return value
+
+    @final
+    def catch(
+        cls,
+        name: str = "",
+        *,
+        clear_on_error: bool = True,
+        raise_error: bool = False,
+    ):
+        """
+        Create a context manager for handling errors in singleton hub operations.
+
+        This method creates a context manager that wraps the value retrieved from
+        the singleton hub. It provides error handling capabilities and control over
+        whether values are cleared from cache on error.
+
+        :param name: The name used to retrieve the value.
+        :param clear_on_error: Whether to clear the value from cache on error.
+        :param raise_error: Whether to re-raise the error after handling.
+        :return: A context manager for the retrieved value.
+        """
+        return Catcher(
+            cls,
+            name,
+            cls.get(name),
+            clear_on_error,
+            raise_error,
+        )
 
     def __getattr__(cls, name: str):
         if name.startswith("_"):
