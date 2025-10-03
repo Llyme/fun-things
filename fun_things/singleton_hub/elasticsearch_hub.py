@@ -40,7 +40,7 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
                 for scheme, username, password, host, port in (
                     match.groups()
                     for match in re.finditer(
-                        r"(https?):\/\/(?:([^\s@]+)?:([^\s@]+)@)?([^\s@,]+):(\d+)",
+                        r"(https?):\/\/(?:([^\s@]+)?:([^\s@]+)@)?([^:\s@]+)(?::(\d+))?",
                         os.environ.get(name) or "",
                     )
                 )
