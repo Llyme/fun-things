@@ -36,7 +36,13 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
     def _value_selector(cls, name: str):
         client = Elasticsearch(
             hosts=[
-                f"{scheme}://{f'{username}:{password}@' if password else ''}{host}:{port}"
+                "{scheme}://{username}:{password}@{host}{port}".format(
+                    scheme=scheme,
+                    username=username,
+                    password=password,
+                    host=host,
+                    port=":" + port if port else "",
+                )
                 for scheme, username, password, host, port in (
                     match.groups()
                     for match in re.finditer(
