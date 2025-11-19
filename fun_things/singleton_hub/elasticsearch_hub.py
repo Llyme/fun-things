@@ -36,10 +36,11 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
     def _value_selector(cls, name: str):
         client = Elasticsearch(
             hosts=[
-                "{scheme}://{username}:{password}@{host}{port}".format(
+                "{scheme}://{credentials}{host}{port}".format(
                     scheme=scheme,
-                    username=username,
-                    password=password,
+                    credentials=f"{username}:{password}@"
+                    if username or password
+                    else "",
                     host=host,
                     port=":" + port if port else "",
                 )
