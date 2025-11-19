@@ -47,22 +47,28 @@ def generic_retry(
         str, Callable[[RetryCallState], str]
     ] = lambda retry_state: f"#{retry_state.attempt_number} Retrying in {retry_state.upcoming_sleep:.2f}s...",
     reraise=True,
+    before_sleep: Optional[Callable[[RetryCallState], Any]] = None,
     warning_logger: Optional[Callable[[str], Any]] = print,
     error_logger: Optional[Callable[[str], Any]] = print,
 ):
     if tenacity is None:
         raise ImportError("tenacity is not installed")
 
+    def before_sleep_fn(retry_state: RetryCallState):
+        if before_sleep:
+            before_sleep(retry_state)
+
+        if warning_logger and retry_state.attempt_number < stop.max_attempt_number:
+            warning_logger(
+                retry_message(retry_state) if callable(retry_message) else retry_message
+            )
+
     return tenacity.retry(
         stop=stop,
         wait=wait,
         reraise=reraise,
         retry=retry,
-        before_sleep=lambda retry_state: print(
-            retry_message(retry_state) if callable(retry_message) else retry_message
-        )
-        if warning_logger and retry_state.attempt_number < stop.max_attempt_number
-        else None,
+        before_sleep=before_sleep_fn,
         retry_error_callback=lambda retry_state: generic_retry_error_callback(
             retry_state=retry_state,
             error_logger=error_logger,
