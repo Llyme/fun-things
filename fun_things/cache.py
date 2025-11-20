@@ -20,18 +20,45 @@ TValue = TypeVar("TValue")
 class Cache(Generic[TArgs, TValue]):
     this: "Cache[TArgs, TValue]"
 
+    @property
+    def count(self):
+        return len(self.cache)
+
+    @property
+    def keys(self):
+        return self.cache.keys()
+
+    @property
+    def values(self):
+        return self.cache.values()
+
     def __init__(self):
         self.cache: Dict[str, Tuple[datetime, TValue]] = {}
         self.lifetime = timedelta(minutes=10)
+        self.max_count = 100
         self.logger: Optional[Callable[[str], Any]] = print
 
     def __getitem__(self, args: TArgs):
         return self.get(args)
 
+    def __setitem__(self, args: TArgs, value: TValue):
+        return self.set(args, value)
+
     @final
     def flush(self):
         now = datetime.now() - self.lifetime
         self.cache = {key: value for key, value in self.cache.items() if value[0] > now}
+
+        if len(self.cache) <= self.max_count:
+            return
+
+        # Trim the oldest items until within max_count
+        items = sorted(
+            self.cache.items(),
+            key=lambda x: x[1][0],
+            reverse=True,
+        )
+        self.cache = dict(items[: self.max_count])
 
     @final
     def flush_all(self):
@@ -39,12 +66,14 @@ class Cache(Generic[TArgs, TValue]):
 
     @final
     def get(self, args: TArgs):
-        self.flush()
-
         key = self._get_key(args)
 
         if key in self.cache:
-            return self.cache[key][1]
+            data = self.cache[key][1]
+
+            self.flush()
+
+            return data
 
         if self.logger:
             self.logger(
@@ -57,14 +86,25 @@ class Cache(Generic[TArgs, TValue]):
         doc = self._load(args)
         self.cache[key] = (datetime.now(), doc)
 
+        self.flush()
+
         return doc
+
+    @final
+    def set(self, args: TArgs, value: TValue):
+        self.cache[self._get_key(args)] = (
+            datetime.now(),
+            value,
+        )
+
+        self.flush()
+
+        return value
 
     @final
     def get_many(self, argses: Sequence[TArgs]) -> List[TValue]:
         if not argses:
             return []
-
-        self.flush()
 
         missing_indices = []
         result = {}
@@ -96,13 +136,18 @@ class Cache(Generic[TArgs, TValue]):
 
             for index, doc in enumerate(docs):
                 result[missing_indices[index]] = doc
-                self.cache[missing_keys[index]] = (datetime.now(), doc)
+                self.cache[missing_keys[index]] = (
+                    datetime.now(),
+                    doc,
+                )
+
+        self.flush()
 
         return [result[i] for i in range(length)]
 
     @abstractmethod
     def _get_key(self, args: TArgs) -> str:
-        pass
+        raise NotImplementedError("Not implemented")
 
     def _load(self, args: TArgs) -> TValue:
         raise NotImplementedError("Not implemented")
