@@ -32,11 +32,16 @@ class Cache(Generic[TArgs, TValue]):
     def values(self):
         return self.cache.values()
 
-    def __init__(self):
+    def __init__(
+        self,
+        lifetime: timedelta = timedelta(minutes=10),
+        max_count: int = 100,
+        logger: Optional[Callable[[str], Any]] = print,
+    ):
         self.cache: Dict[str, Tuple[datetime, TValue]] = {}
-        self.lifetime = timedelta(minutes=10)
-        self.max_count = 100
-        self.logger: Optional[Callable[[str], Any]] = print
+        self.lifetime = lifetime
+        self.max_count = max_count
+        self.logger = logger
 
     def __getitem__(self, args: TArgs):
         return self.get(args)
@@ -63,6 +68,10 @@ class Cache(Generic[TArgs, TValue]):
     @final
     def flush_all(self):
         self.cache = {}
+
+    @final
+    def has(self, args: TArgs):
+        return self._get_key(args) in self.cache
 
     @final
     def get(self, args: TArgs):
