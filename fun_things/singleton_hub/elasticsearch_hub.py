@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Any, Callable, Optional
 
 from elasticsearch import Elasticsearch
 
@@ -31,7 +32,7 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
         ],
     )
     _kwargs: dict = {}
-    _log: bool = True
+    _logger: Optional[Callable[..., Any]] = print
 
     def _value_selector(cls, name: str):
         client = Elasticsearch(
@@ -55,8 +56,8 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
             **cls._kwargs,
         )
 
-        if cls._log:
-            print(f"Elasticsearch `{name}` instantiated.")
+        if cls._logger:
+            cls._logger(f"Elasticsearch `{name}` instantiated.")
 
         return client
 
@@ -67,8 +68,8 @@ class ElasticsearchHubMeta(EnvironmentHubMeta[Elasticsearch]):
     ) -> None:
         value.close()
 
-        if cls._log:
-            print(f"Elasticsearch `{key}` closed.")
+        if cls._logger:
+            cls._logger(f"Elasticsearch `{key}` closed.")
 
 
 class ElasticsearchHub(metaclass=ElasticsearchHubMeta):

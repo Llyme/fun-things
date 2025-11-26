@@ -1,4 +1,5 @@
 import os
+from typing import Any, Callable, Optional
 
 from redis import Redis
 
@@ -10,7 +11,7 @@ class RedisHubMeta(EnvironmentHubMeta[Redis]):
         "REDIS",
     )
     _kwargs: dict = {}
-    _log: bool = True
+    _logger: Optional[Callable[..., Any]] = print
 
     def _value_selector(cls, name: str):
         client = Redis.from_url(
@@ -18,8 +19,8 @@ class RedisHubMeta(EnvironmentHubMeta[Redis]):
             **cls._kwargs,
         )
 
-        if cls._log:
-            print(f"Redis `{name}` instantiated.")
+        if cls._logger:
+            cls._logger(f"Redis `{name}` instantiated.")
 
         return client
 
@@ -30,8 +31,8 @@ class RedisHubMeta(EnvironmentHubMeta[Redis]):
     ) -> None:
         value.close()
 
-        if cls._log:
-            print(f"Redis `{key}` closed.")
+        if cls._logger:
+            cls._logger(f"Redis `{key}` closed.")
 
 
 class RedisHub(metaclass=RedisHubMeta):

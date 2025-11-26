@@ -1,4 +1,5 @@
 import os
+from typing import Any, Callable, Optional
 
 from pymongo import MongoClient
 
@@ -12,7 +13,7 @@ class MongoHubMeta(EnvironmentHubMeta[MongoClient]):
         "MONGODB",
     )
     _kwargs: dict = {}
-    _log: bool = True
+    _logger: Optional[Callable[..., Any]] = print
 
     def _value_selector(cls, name: str):
         client = MongoClient(
@@ -20,8 +21,8 @@ class MongoHubMeta(EnvironmentHubMeta[MongoClient]):
             **cls._kwargs,
         )
 
-        if cls._log:
-            print(f"MongoDB `{name}` instantiated.")
+        if cls._logger:
+            cls._logger(f"MongoDB `{name}` instantiated.")
 
         return client
 
@@ -32,8 +33,8 @@ class MongoHubMeta(EnvironmentHubMeta[MongoClient]):
     ) -> None:
         value.close()
 
-        if cls._log:
-            print(f"MongoDB `{key}` closed.")
+        if cls._logger:
+            cls._logger(f"MongoDB `{key}` closed.")
 
 
 class MongoHub(metaclass=MongoHubMeta):
