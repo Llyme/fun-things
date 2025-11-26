@@ -1,7 +1,7 @@
 import logging
 import time
 import traceback
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fun_things.colored_formatter import ColoredFormatter
 from fun_things.opentelemetry.otlp_handler import OTLPHandler
@@ -52,6 +52,7 @@ class OTLPHelper:
         version: str,
         environment: str,
         otlp_endpoint: str,
+        warn_no_connection: bool = True,
     ):
         """
         Initialize OTLPHelper with service metadata.
@@ -72,7 +73,8 @@ class OTLPHelper:
         self.version = version
         self.environment = environment
         self.otlp_endpoint = otlp_endpoint
-        self.initialized = False
+        self.initialized: Literal["no", "partial", "yes"] = "no"
+        self.warn_no_connection = warn_no_connection
 
     def make_logger_provider(self):
         """
@@ -145,11 +147,13 @@ class OTLPHelper:
         # Add custom SUCCESS level
         logging.addLevelName(25, "SUCCESS")
 
-        logger.addHandler(self.otel_handler)
-
         console_handler = logging.StreamHandler()
 
-        console_handler.setFormatter(ColoredFormatter.make())
+        console_handler.setFormatter(
+            ColoredFormatter.make(
+                fmt="📵 %(message)s" if self.otlp_endpoint is None else None,
+            )
+        )
         logger.addHandler(console_handler)
 
         logger.propagate = False
@@ -167,13 +171,27 @@ class OTLPHelper:
             If otlp_endpoint is not configured, initialization is skipped.
             If already initialized, subsequent calls have no effect.
         """
+        if self.initialized == "yes":
+            return
+
+        if self.initialized != "partial":
+            self.direct_logger = self.make_direct_logger()
+
+            if not self.otlp_endpoint:
+                self.initialized = "partial"
+
+                if self.warn_no_connection:
+                    print(
+                        "\n\033[93mNo OTLP endpoint configured! "
+                        "Telemetry data will not be exported. "
+                        "Set the OTLP endpoint to enable remote logging.\033[0m\n"
+                    )
+
+                return
+
         if not self.otlp_endpoint:
             return
 
-        if self.initialized:
-            return
-
-        self.initialized = True
         self.resource = Resource.create(
             {
                 "service.name": f"{self.namespace}-{self.service}",
@@ -201,7 +219,11 @@ class OTLPHelper:
         )
 
         self.otel_handler = self.make_otel_handler()
-        self.direct_logger = self.make_direct_logger()
+
+        if self.direct_logger is not None:
+            self.direct_logger.addHandler(self.otel_handler)
+
+        self.initialized = "yes"
 
     def flush_logs(
         self,
@@ -220,7 +242,7 @@ class OTLPHelper:
         Returns:
             bool: True if flush completed successfully, False otherwise.
         """
-        if not self.initialized:
+        if self.initialized != "yes":
             return False
 
         try:
@@ -245,10 +267,10 @@ class OTLPHelper:
         Returns:
             bool: True if shutdown completed successfully, False otherwise.
         """
-        if not self.initialized:
+        if self.initialized != "yes":
             return False
 
-        self.initialized = False
+        self.initialized = "no"
 
         try:
             self.flush_logs(
@@ -276,7 +298,7 @@ class OTLPHelper:
             level: Logging level (e.g., logging.INFO, logging.ERROR).
             message: Message to log.
         """
-        if not self.initialized:
+        if self.initialized != "yes":
             self.initialize()
 
         if self.direct_logger is not None:

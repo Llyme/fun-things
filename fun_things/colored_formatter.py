@@ -1,5 +1,6 @@
 import inspect
 import logging
+from typing import Optional
 
 from fun_things.frame import get_frame
 
@@ -76,18 +77,23 @@ class ColoredFormatter(logging.Formatter):
         )
 
         asctime = self.formatTime(record, self.datefmt)
+
         formatted = self.FORMAT.format(
             time=asctime,
             level_color=color,
             level=record.levelname,
             traceback=self.traceback,
-            message=record.getMessage(),
+            message=super().format(record),
         )
 
         return formatted
 
     @classmethod
-    def make(cls):
+    def make(
+        cls,
+        *,
+        fmt: Optional[str] = None,
+    ):
         """
         Create a new `ColoredFormatter` instance with default date format.
 
@@ -95,5 +101,6 @@ class ColoredFormatter(logging.Formatter):
             ColoredFormatter: New formatter instance configured with ISO-style datetime format.
         """
         return ColoredFormatter(
+            fmt=fmt,
             datefmt="%Y-%m-%d %H:%M:%S",
         )
