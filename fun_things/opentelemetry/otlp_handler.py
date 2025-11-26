@@ -11,7 +11,6 @@ try:
 
 except Exception:
     LoggingHandler: Any = None
-
     traceback.print_exc()
 
 
@@ -43,29 +42,30 @@ class OTLPHandler(LoggingHandler):
 
         frame_info = inspect.getframeinfo(frame)
 
-        pathname = frame_info.filename
-        function_name = frame_info.function
-        line_number = frame_info.lineno
+        record.funcName = frame_info.function
+        record.lineno = frame_info.lineno
+        record.pathname = frame_info.filename
+        record.stack_info = "\n".join(traceback.format_stack(frame))
 
         setattr(
             record,
             "code.file.path",
-            pathname,
+            record.pathname,
         )
         setattr(
             record,
             "code.function.name",
-            function_name,
+            record.funcName,
         )
         setattr(
             record,
             "code.line.number",
-            line_number,
+            record.lineno,
         )
         setattr(
             record,
             "code.traceback",
-            traceback.format_stack(frame),
+            record.stack_info,
         )
 
     def emit(self, record):
