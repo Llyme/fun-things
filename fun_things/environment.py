@@ -1,9 +1,10 @@
 import os
 import sys
 from typing import Any, Callable, Iterable, List, Optional, TypeVar
-from .undefined import undefined
+
 from . import parse
 from .not_chalk import NotChalk
+from .undefined import undefined
 
 try:
     from simple_chalk import chalk  # type: ignore
@@ -82,6 +83,7 @@ SPECIAL_KEYS = [
 
 CONFIDENTIAL_KEYWORDS = [
     "password",
+    "pass",
     "uri",
     "secret",
     "passphrase",
@@ -202,9 +204,11 @@ def pretty_print(
         min_key_length,
     )
     value_len = filter(
-        lambda field: not __contains(
-            field[0],
-            confidential_keywords,
+        lambda field: (
+            not __contains(
+                field[0],
+                confidential_keywords,
+            )
         ),
         fields,
     )
