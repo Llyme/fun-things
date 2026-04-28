@@ -1,7 +1,8 @@
-from abc import ABC
 import os
+import re
 import string
-from typing import Iterable, TypeVar
+from abc import ABC
+from typing import Iterable, TypeVar, final
 
 from . import SingletonHubMeta
 
@@ -107,3 +108,37 @@ class EnvironmentHubMeta(SingletonHubMeta[T], ABC):
             )
 
         return name.upper()
+
+    @final
+    def get_all(cls):
+        cache = set()
+
+        for fmt in cls._formats:
+            fmt_upper = fmt.upper()
+
+            if "{NAME}" not in fmt_upper:
+                continue
+
+            pattern = re.compile(
+                "^"
+                + re.escape(fmt_upper).replace(
+                    r"\{NAME\}",
+                    "(.+)",
+                )
+                + "$"
+            )
+
+            for env_key in os.environ:
+                match = pattern.match(env_key.upper())
+
+                if match is None:
+                    continue
+
+                name = match.group(1)
+
+                if name in cache:
+                    continue
+
+                cache.add(name)
+
+                yield cls.get(name)
