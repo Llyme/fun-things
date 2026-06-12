@@ -195,15 +195,6 @@ class SingletonHubMeta(ABC, type, Generic[T]):
             raise_error,
         )
 
-    @property
-    def dc(cls):
-        """The default client — shorthand for ``get("")``.
-
-        A real attribute (not routed through ``__getattr__``), so it resolves to
-        the default-named client rather than a client literally named ``"dc"``.
-        """
-        return cls.get("")
-
     def __getattr__(cls, name: str):
         if name.startswith("_"):
             return super().__getattribute__(name)
