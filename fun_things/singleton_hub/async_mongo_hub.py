@@ -3,16 +3,20 @@ from typing import Any, Callable, Optional
 
 from pymongo import AsyncMongoClient
 
+from . import AsyncSingletonHubMeta
 from .environment_hub import EnvironmentHubMeta
 
 
-class AsyncMongoHubMeta(EnvironmentHubMeta[AsyncMongoClient]):
+class AsyncMongoHubMeta(
+    EnvironmentHubMeta[AsyncMongoClient],
+    AsyncSingletonHubMeta[AsyncMongoClient],
+):
     """Async counterpart of :class:`MongoHubMeta`.
 
     Builds pymongo's native ``AsyncMongoClient`` (pymongo 4.9+, no motor). The
     accessor is synchronous; only the operations are awaited. Because closing an
-    async client is itself a coroutine, teardown is :meth:`aclose_all` (an
-    awaitable) rather than the sync ``clear_all`` — it must be awaited inside the
+    async client is itself a coroutine, teardown is the async ``aclear`` /
+    ``aclear_all`` (which close *and* clear the cache) — awaited inside the
     running event loop.
     """
 
@@ -36,23 +40,17 @@ class AsyncMongoHubMeta(EnvironmentHubMeta[AsyncMongoClient]):
         return client
 
     def _on_clear(cls, key: str, value: AsyncMongoClient) -> None:
-        # Closing is async — handled in aclose_all, not here.
+        # Closing is async — use aclear/aclear_all (see _aon_clear).
         pass
 
-    async def aclose_all(cls):
-        """Awaitable cleanup — close every cached client.
+    async def _aon_clear(cls, key: str, value: AsyncMongoClient) -> None:
+        try:
+            await value.close()
+        except Exception:
+            pass
 
-        ``clear_all`` drops the cache and returns the clients (its ``_on_clear``
-        is a no-op here), which are then closed with ``await``.
-        """
-        for key, value in cls.clear_all().items():
-            try:
-                await value.close()
-            except Exception:
-                pass
-
-            if cls._logger:
-                cls._logger(f"Async MongoDB `{key}` closed.")
+        if cls._logger:
+            cls._logger(f"Async MongoDB `{key}` closed.")
 
 
 class AsyncMongoHub(metaclass=AsyncMongoHubMeta):

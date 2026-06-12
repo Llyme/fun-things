@@ -2,16 +2,20 @@ import os
 
 from redis.asyncio import Redis
 
+from . import AsyncSingletonHubMeta
 from .environment_hub import EnvironmentHubMeta
 
 
-class AsyncRedisHubMeta(EnvironmentHubMeta[Redis]):
+class AsyncRedisHubMeta(
+    EnvironmentHubMeta[Redis],
+    AsyncSingletonHubMeta[Redis],
+):
     """Async counterpart of :class:`RedisHubMeta`.
 
     Builds ``redis.asyncio`` clients. The accessor is synchronous; only the
-    operations are awaited. Closing is a coroutine, so teardown is
-    :meth:`aclose_all` (an awaitable) — it must be awaited inside the running
-    event loop.
+    operations are awaited. Closing is a coroutine, so teardown is the async
+    ``aclear`` / ``aclear_all`` (which close *and* clear the cache) — awaited
+    inside the running event loop.
     """
 
     _formats = EnvironmentHubMeta._bake_basic_uri_formats(
@@ -32,23 +36,17 @@ class AsyncRedisHubMeta(EnvironmentHubMeta[Redis]):
         return client
 
     def _on_clear(cls, key: str, value: Redis) -> None:
-        # Closing is async — handled in aclose_all, not here.
+        # Closing is async — use aclear/aclear_all (see _aon_clear).
         pass
 
-    async def aclose_all(cls):
-        """Awaitable cleanup — close every cached client.
+    async def _aon_clear(cls, key: str, value: Redis) -> None:
+        try:
+            await value.aclose()
+        except Exception:
+            pass
 
-        ``clear_all`` drops the cache and returns the clients (its ``_on_clear``
-        is a no-op here), which are then closed with ``await``.
-        """
-        for key, value in cls.clear_all().items():
-            try:
-                await value.aclose()
-            except Exception:
-                pass
-
-            if cls._log:
-                print(f"Async Redis `{key}` closed.")
+        if cls._log:
+            print(f"Async Redis `{key}` closed.")
 
 
 class AsyncRedisHub(metaclass=AsyncRedisHubMeta):

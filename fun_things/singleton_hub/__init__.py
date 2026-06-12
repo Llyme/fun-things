@@ -84,7 +84,6 @@ class SingletonHubMeta(ABC, type, Generic[T]):
     def _on_clear(cls, key: str, value: T) -> None:
         pass
 
-    @final
     def clear(cls, name: str):
         """
         Clear the cached value associated with the given name.
@@ -119,7 +118,6 @@ class SingletonHubMeta(ABC, type, Generic[T]):
 
         return key, value
 
-    @final
     def clear_all(cls):
         """
         Clear all cached values and return them in a dictionary.
@@ -197,8 +195,74 @@ class SingletonHubMeta(ABC, type, Generic[T]):
             raise_error,
         )
 
+    @property
+    def dc(cls):
+        """The default client — shorthand for ``get("")``.
+
+        A real attribute (not routed through ``__getattr__``), so it resolves to
+        the default-named client rather than a client literally named ``"dc"``.
+        """
+        return cls.get("")
+
     def __getattr__(cls, name: str):
         if name.startswith("_"):
             return super().__getattribute__(name)
 
         return cls.get(name)
+
+
+class AsyncSingletonHubMeta(SingletonHubMeta[T]):
+    """Singleton hub whose clients close via a coroutine.
+
+    Overrides :meth:`clear` / :meth:`clear_all` with **async** versions (same
+    names as the sync base) that ``await`` the teardown hook :meth:`_aon_clear`.
+    Override ``_aon_clear`` in concrete hubs to ``await`` the client's close.
+    """
+
+    # The cache dicts are name-mangled onto the base; reach them explicitly.
+    @property
+    def __cache(cls) -> Dict[str, T]:
+        return cls._SingletonHubMeta__value_cache  # type: ignore[attr-defined]
+
+    @property
+    def __keys(cls) -> Dict[str, str]:
+        return cls._SingletonHubMeta__key_cache  # type: ignore[attr-defined]
+
+    async def _aon_clear(cls, key: str, value: T) -> None:
+        """Async teardown hook; defaults to the sync :meth:`_on_clear`."""
+        cls._on_clear(key, value)
+
+    async def clear(cls, name: str):  # type: ignore[override]
+        """Async :meth:`SingletonHubMeta.clear` — awaits :meth:`_aon_clear`."""
+        keys = cls.__keys
+
+        if name not in keys:
+            return None, None
+
+        key = keys[name]
+        cache = cls.__cache
+
+        if key not in cache:
+            return key, None
+
+        value = cache[key]
+
+        await cls._aon_clear(key, value)
+
+        del cache[key]
+
+        return key, value
+
+    async def clear_all(cls):  # type: ignore[override]
+        """Async :meth:`SingletonHubMeta.clear_all` — awaits :meth:`_aon_clear`."""
+        cache = cls.__cache
+        result: Dict[str, T] = {}
+
+        for key, value in cache.items():
+            result[key] = value
+
+            await cls._aon_clear(key, value)
+
+        cache.clear()
+
+        return result
