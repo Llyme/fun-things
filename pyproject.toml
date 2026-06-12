@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fun-things"
-version = "1.0.0"
+version = "1.1.0"
 description = ""
 authors = ["MisterNyan <michael.edmund.wong@gmail.com>"]
 readme = "README.md"
@@ -10,48 +10,6 @@ fun = "fun_things.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-
-# All optional — the core install is dependency-free. Grouped into extras
-# below; install what you use, e.g. `pip install "fun-things[mongo,redis]"`.
-pymongo = { version = ">=4.9", optional = true }        # singleton_hub (sync+async), bson
-redis = { version = ">=4.2", optional = true }          # singleton_hub (sync+async)
-elasticsearch = { version = "*", optional = true }      # singleton_hub
-boto3 = { version = "*", optional = true }              # singleton_factory
-tenacity = { version = "*", optional = true }           # tenacity/, mongo_transaction
-pydantic = { version = "*", optional = true }           # pydantic/
-fastapi = { version = "*", optional = true }            # fast_api/
-fastapi-healthz = { version = "*", optional = true }    # fast_api/
-opentelemetry-api = { version = "*", optional = true }  # opentelemetry/
-opentelemetry-sdk = { version = "*", optional = true }  # opentelemetry/
-requests = { version = "*", optional = true }           # downloader, network
-"boolean.py" = { version = "*", optional = true }       # boolean_query
-simple-chalk = { version = "*", optional = true }       # logger (colored output; falls back if absent)
-langdetect = { version = "*", optional = true }         # language/
-pycld2 = { version = "*", optional = true }             # language/
-pycountry = { version = "*", optional = true }          # language/
-python-abp = { version = "*", optional = true }         # ad_blocker_filter_parser (module: abp)
-google-re2 = { version = "*", optional = true }         # ad_blocker_filter_parser (module: re2)
-
-[tool.poetry.extras]
-mongo = ["pymongo", "tenacity"]
-redis = ["redis"]
-elasticsearch = ["elasticsearch"]
-aws = ["boto3"]
-pydantic = ["pydantic", "pymongo"]
-fastapi = ["fastapi", "fastapi-healthz", "redis"]
-opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
-tenacity = ["tenacity"]
-language = ["langdetect", "pycld2", "pycountry"]
-adblock = ["python-abp", "google-re2"]
-http = ["requests"]
-boolean = ["boolean.py"]
-chalk = ["simple-chalk"]
-all = [
-    "pymongo", "redis", "elasticsearch", "boto3", "tenacity", "pydantic",
-    "fastapi", "fastapi-healthz", "opentelemetry-api", "opentelemetry-sdk",
-    "requests", "boolean.py", "simple-chalk", "langdetect", "pycld2",
-    "pycountry", "python-abp", "google-re2",
-]
 
 
 [build-system]
