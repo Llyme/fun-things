@@ -32,7 +32,8 @@ Fun-Things provides a variety of utility modules:
 -   **Mathematical Tools**: Math-related functions
 -   **Mutator**: Data mutation utilities
 -   **Pydantic Extensions**: Helpers for working with Pydantic
--   **Singleton Hub**: Centralized singleton management
+-   **Singleton Hub**: Centralized singleton management (sync and async variants)
+-   **OpenTelemetry**: OTLP logging/telemetry helper (`OTLPHelper`) with correct caller attribution through wrapper layers
 -   **Logger**: Enhanced logging capabilities
 -   **FastAPI Utilities**: Helpers for FastAPI applications
 -   **Proxy URI**: Tools for working with proxy URIs
