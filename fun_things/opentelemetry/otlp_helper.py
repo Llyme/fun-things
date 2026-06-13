@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 import traceback
 from typing import Any, Literal, Optional
@@ -288,6 +289,7 @@ class OTLPHelper:
         self,
         level: int,
         message: str,
+        _stacklevel: int = 1,
     ):
         """
         Log a message at the specified level.
@@ -297,14 +299,39 @@ class OTLPHelper:
         Args:
             level: Logging level (e.g., logging.INFO, logging.ERROR).
             message: Message to log.
+            _stacklevel: Frames above this ``log`` call where the real caller
+                sits (1 = whoever called ``log`` directly; each wrapper layer
+                adds one — the level methods pass 2, and a caller wrapping those
+                can bump their public ``stacklevel`` further). The record's
+                func/line/module are taken from that frame so they point at the
+                real caller, not this helper.
         """
         if self.initialized != "yes":
             self.initialize()
 
-        if self.direct_logger is not None:
-            self.direct_logger.log(level, message)
+        logger = self.direct_logger
 
-    def debug(self, *messages, sep: str = " "):
+        if logger is None or not logger.isEnabledFor(level):
+            return
+
+        # NOTE: we don't use ``logger.log(..., stacklevel=...)`` — the OTLP
+        # logging path ignores ``stacklevel`` (it resolves the caller its own
+        # way), so we pick the frame ourselves and build the record from it.
+        try:
+            frame = sys._getframe(_stacklevel)
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
+            func = frame.f_code.co_name
+        except (ValueError, AttributeError):
+            filename, lineno, func = "(unknown file)", 0, "(unknown function)"
+
+        record = logger.makeRecord(
+            logger.name, level, filename, lineno, message, (), None, func
+        )
+
+        logger.handle(record)
+
+    def debug(self, *messages, sep: str = " ", stacklevel: int = 1):
         """
         Log a debug message.
 
@@ -315,9 +342,10 @@ class OTLPHelper:
         self.log(
             logging.DEBUG,
             sep.join(str(msg) for msg in messages),
+            _stacklevel=stacklevel + 1,
         )
 
-    def info(self, *messages, sep: str = " "):
+    def info(self, *messages, sep: str = " ", stacklevel: int = 1):
         """
         Log an info message.
 
@@ -328,9 +356,10 @@ class OTLPHelper:
         self.log(
             logging.INFO,
             sep.join(str(msg) for msg in messages),
+            _stacklevel=stacklevel + 1,
         )
 
-    def warning(self, *messages, sep: str = " "):
+    def warning(self, *messages, sep: str = " ", stacklevel: int = 1):
         """
         Log a warning message.
 
@@ -341,9 +370,10 @@ class OTLPHelper:
         self.log(
             logging.WARNING,
             sep.join(str(msg) for msg in messages),
+            _stacklevel=stacklevel + 1,
         )
 
-    def error(self, *messages, sep: str = " "):
+    def error(self, *messages, sep: str = " ", stacklevel: int = 1):
         """
         Log an error message.
 
@@ -354,9 +384,10 @@ class OTLPHelper:
         self.log(
             logging.ERROR,
             sep.join(str(msg) for msg in messages),
+            _stacklevel=stacklevel + 1,
         )
 
-    def critical(self, *messages, sep: str = " "):
+    def critical(self, *messages, sep: str = " ", stacklevel: int = 1):
         """
         Log a critical message.
 
@@ -367,9 +398,10 @@ class OTLPHelper:
         self.log(
             logging.CRITICAL,
             sep.join(str(msg) for msg in messages),
+            _stacklevel=stacklevel + 1,
         )
 
-    def success(self, *messages, sep: str = " "):
+    def success(self, *messages, sep: str = " ", stacklevel: int = 1):
         """
         Log a success message (custom level 25).
 
@@ -380,4 +412,5 @@ class OTLPHelper:
         self.log(
             25,
             sep.join(str(msg) for msg in messages),
+            _stacklevel=stacklevel + 1,
         )

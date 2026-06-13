@@ -1,10 +1,7 @@
-import inspect
 import json
 import logging
 import traceback
 from typing import Any
-
-from fun_things.frame import get_frame
 
 try:
     from opentelemetry.sdk._logs import LoggingHandler
@@ -22,51 +19,23 @@ class OTLPHandler(LoggingHandler):
     (file path, line number, function name) that will be displayed in Kibana.
     """
 
-    stack_depth = 11
-
     def __set_caller(self, record: logging.LogRecord):
         """
-        Extract actual caller information from the call stack.
+        Attach code-location attributes for OTLP export.
 
-        Traverses the call stack to find the actual caller (skipping logging framework frames)
-        and returns caller information.
-
-        Returns:
-            tuple: (pathname, function_name, line_number) of the actual caller,
-                   or (None, None, None) if caller cannot be determined.
+        Uses the caller info already on the record (set by ``logging``'s
+        ``findCaller`` or by ``OTLPHelper.log`` from the real frame) rather than
+        re-walking the stack at a fixed depth — a fixed depth points at the wrong
+        frame the moment the call passes through wrapper layers (e.g. a project's
+        ``say()``/``discord`` helpers).
         """
-        frame = get_frame(self.stack_depth)
 
-        if frame is None:
-            return
+        setattr(record, "code.file.path", record.pathname)
+        setattr(record, "code.function.name", record.funcName)
+        setattr(record, "code.line.number", record.lineno)
 
-        frame_info = inspect.getframeinfo(frame)
-
-        record.funcName = frame_info.function
-        record.lineno = frame_info.lineno
-        record.pathname = frame_info.filename
-        record.stack_info = "\n".join(traceback.format_stack(frame))
-
-        setattr(
-            record,
-            "code.file.path",
-            record.pathname,
-        )
-        setattr(
-            record,
-            "code.function.name",
-            record.funcName,
-        )
-        setattr(
-            record,
-            "code.line.number",
-            record.lineno,
-        )
-        setattr(
-            record,
-            "code.traceback",
-            record.stack_info,
-        )
+        if record.stack_info:
+            setattr(record, "code.traceback", record.stack_info)
 
     def emit(self, record):
         """

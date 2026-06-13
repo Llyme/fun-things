@@ -1,8 +1,5 @@
-import inspect
 import logging
 from typing import Optional
-
-from fun_things.frame import get_frame
 
 
 class ColoredFormatter(logging.Formatter):
@@ -33,33 +30,16 @@ class ColoredFormatter(logging.Formatter):
     GRAY = "\033[90m"
     FORMAT = f"{GRAY}{{time}}{RESET} | {{level_color}}{{level:<8}}{RESET} | {GRAY}{{traceback}}{RESET} {{level_color}}{{message}}{RESET}"
 
-    stack_depth = 13
+    @staticmethod
+    def _caller(record: logging.LogRecord) -> str:
+        """Caller info straight off the record (set by logging or the caller).
 
-    @property
-    def traceback(self):
+        Uses the record's own ``module``/``funcName``/``lineno`` rather than
+        re-walking the stack at a fixed depth — a fixed depth points at the
+        wrong frame as soon as the call goes through wrapper layers.
         """
-        Extract caller information from the call stack.
 
-        Traverses the call stack to find the actual caller (skipping logging framework frames)
-        and returns formatted caller information.
-
-        Returns:
-            str: Formatted string containing module, function, and line number of the caller,
-                 or empty string if caller information cannot be determined.
-        """
-        frame = get_frame(self.stack_depth)
-
-        if frame is None:
-            return ""
-
-        frame_info = inspect.getframeinfo(frame)
-        frame_module = inspect.getmodule(frame)
-        module_name = frame_module.__name__ if frame_module else ""
-        caller_module = module_name
-        caller_funcName = frame_info.function
-        caller_lineno = frame_info.lineno
-
-        return f"{caller_module}:{caller_funcName}:{caller_lineno} -"
+        return f"{record.module}:{record.funcName}:{record.lineno} -"
 
     def format(self, record):
         """
@@ -82,7 +62,7 @@ class ColoredFormatter(logging.Formatter):
             time=asctime,
             level_color=color,
             level=record.levelname,
-            traceback=self.traceback,
+            traceback=self._caller(record),
             message=super().format(record),
         )
 
