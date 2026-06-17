@@ -1,8 +1,9 @@
 import logging
+import os
 import sys
 import time
 import traceback
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 from fun_things.colored_formatter import ColoredFormatter
 from fun_things.opentelemetry.otlp_handler import OTLPHandler
@@ -22,6 +23,20 @@ except Exception:
     set_logger_provider: Any
 
     traceback.print_exc()
+
+
+# Standard level names -> ints, used on runtimes without
+# logging.getLevelNamesMapping (added in 3.11).
+_STD_LEVELS = {
+    "CRITICAL": logging.CRITICAL,
+    "FATAL": logging.CRITICAL,
+    "ERROR": logging.ERROR,
+    "WARNING": logging.WARNING,
+    "WARN": logging.WARNING,
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG,
+    "NOTSET": logging.NOTSET,
+}
 
 
 class OTLPHelper:
@@ -54,6 +69,7 @@ class OTLPHelper:
         environment: str,
         otlp_endpoint: str,
         warn_no_connection: bool = True,
+        level: Union[int, str, None] = None,
     ):
         """
         Initialize OTLPHelper with service metadata.
@@ -66,6 +82,9 @@ class OTLPHelper:
             version: Service version for resource attributes.
             environment: Deployment environment.
             otlp_endpoint: HTTP endpoint URL for OTLP log export.
+            level: Minimum log level (int or name like ``"DEBUG"``). Defaults
+                to the ``LOG_LEVEL`` env var, else ``INFO``. Lower-priority
+                records are dropped before console output and OTLP export.
         """
         self.project = project
         self.component = component
@@ -76,6 +95,30 @@ class OTLPHelper:
         self.otlp_endpoint = otlp_endpoint
         self.initialized: Literal["no", "partial", "yes"] = "no"
         self.warn_no_connection = warn_no_connection
+        self.level = self._resolve_level(level)
+
+    @staticmethod
+    def _resolve_level(level: Union[int, str, None]) -> int:
+        """Resolve a level int/name/None into a logging level int.
+
+        ``None`` falls back to the ``LOG_LEVEL`` env var, then ``INFO``.
+        Unknown names also fall back to ``INFO``.
+        """
+        if level is None:
+            level = os.environ.get("LOG_LEVEL", "INFO")
+
+        if not isinstance(level, str):
+            return level
+
+        name = level.strip().upper()
+
+        # getLevelNamesMapping (3.11+) also covers custom-registered names;
+        # fall back to an explicit table of the standard names on older
+        # runtimes.
+        mapping_fn = getattr(logging, "getLevelNamesMapping", None)
+        mapping = mapping_fn() if mapping_fn is not None else _STD_LEVELS
+
+        return mapping.get(name, logging.INFO)
 
     def make_logger_provider(self):
         """
@@ -141,7 +184,7 @@ class OTLPHelper:
         """
         logger = logging.getLogger(f"otlp_direct_{id(self)}")
 
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(self.level)
 
         logger.handlers.clear()
 
